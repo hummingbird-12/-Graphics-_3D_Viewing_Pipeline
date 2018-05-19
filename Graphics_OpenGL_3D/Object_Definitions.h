@@ -313,7 +313,6 @@ void define_static_objects(void) {
 }
 
 void draw_static_object(Object *obj_ptr, int instance_ID, int camera_ID) {
-	glViewport(viewport[camera_ID].x, viewport[camera_ID].y, viewport[camera_ID].w, viewport[camera_ID].h);
 	glFrontFace(obj_ptr->front_face_mode);
 
 	ModelViewMatrix[camera_ID] = ViewMatrix[camera_ID] * obj_ptr->ModelMatrix[instance_ID];

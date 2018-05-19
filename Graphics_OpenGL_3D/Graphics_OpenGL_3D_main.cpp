@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
@@ -70,31 +71,48 @@ void set_ViewMatrix(int camera_id) {
 
 #include "Object_Definitions.h"
 
+void display_camera(int camera_id) {
+	glViewport(viewport[camera_id].x, viewport[camera_id].y, viewport[camera_id].w, viewport[camera_id].h);
+
+	glLineWidth(2.0f);
+	draw_axes(camera_id);
+	glLineWidth(1.0f);
+
+	draw_static_object(&(static_objects[OBJ_BUILDING]), 0, camera_id);
+
+	draw_static_object(&(static_objects[OBJ_TABLE]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_TABLE]), 1, camera_id);
+
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 1, camera_id);
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 2, camera_id);
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 3, camera_id);
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 4, camera_id);
+
+	draw_static_object(&(static_objects[OBJ_TEAPOT]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_NEW_CHAIR]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_FRAME]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_NEW_PICTURE]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_COW]), 0, camera_id);
+
+	draw_animated_tiger(camera_id);
+}
+
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	glLineWidth(2.0f);
-	draw_axes(MAIN_CAM);
-	glLineWidth(1.0f);
- 
-    draw_static_object(&(static_objects[OBJ_BUILDING]), 0, MAIN_CAM);
 
-	draw_static_object(&(static_objects[OBJ_TABLE]), 0, MAIN_CAM);
-	draw_static_object(&(static_objects[OBJ_TABLE]), 1, MAIN_CAM);
-
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 0, MAIN_CAM);
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 1, MAIN_CAM);
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 2, MAIN_CAM);
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 3, MAIN_CAM);
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 4, MAIN_CAM);
-
-	draw_static_object(&(static_objects[OBJ_TEAPOT]), 0, MAIN_CAM);
-	draw_static_object(&(static_objects[OBJ_NEW_CHAIR]), 0, MAIN_CAM);
- 	draw_static_object(&(static_objects[OBJ_FRAME]), 0, MAIN_CAM);
-	draw_static_object(&(static_objects[OBJ_NEW_PICTURE]), 0, MAIN_CAM);
-	draw_static_object(&(static_objects[OBJ_COW]), 0, MAIN_CAM);
-
-	draw_animated_tiger(MAIN_CAM);
+	if (ViewMode == EXTERIOR_MODE) { // MAIN_CAM, CCTV_1, CCTV_2, CCTV_3
+		display_camera(MAIN_CAM);
+		display_camera(CCTV_1);
+		display_camera(CCTV_2);
+		display_camera(CCTV_3);
+	}
+	else { // CCTV_X, SIDE_CAM, FRONT_CAM, TOP_CAM
+		display_camera(CCTV_1);
+		display_camera(SIDE_CAM);
+		display_camera(FRONT_CAM);
+		display_camera(TOP_CAM);
+	}
 	glutSwapBuffers();
 }
 
@@ -159,34 +177,40 @@ void keyboard(unsigned char key, int x, int y) {
 
 void reshape(int width, int height) {
 	float aspect_ratio;
+	int id_list[4];
 	aspect_ratio = (float)width / height;
 
 	//glViewport(0, 0, width, height);
 
 	if (ViewMode == EXTERIOR_MODE) { // MAIN_CAM, CCTV_1, CCTV_2, CCTV_3
+		id_list[0] = MAIN_CAM;
+		id_list[1] = CCTV_1;
+		id_list[2] = CCTV_2;
+		id_list[3] = CCTV_3;
 
 		viewport[MAIN_CAM].x = viewport[MAIN_CAM].y = 0;
 		viewport[MAIN_CAM].w = (int)(1.0f * width);
 		viewport[MAIN_CAM].h = (int)(0.7f * height);
-		camera[MAIN_CAM].aspect_ratio = (1.0f * width) / (0.7f * height);
+		//camera[MAIN_CAM].aspect_ratio = (1.0f * width) / (0.7f * height);
 
 		viewport[CCTV_1].x = 0;
 		viewport[CCTV_1].y = height - 0.3f * height;
-		viewport[CCTV_1].w = viewport[CCTV_1].h = (int)(0.3f * height);
+		viewport[CCTV_1].w = viewport[CCTV_1].h = std::min((int)(0.3f * height), (int)(0.3f * width));
 
-		viewport[CCTV_2].x = 0.35f * height;
+		viewport[CCTV_2].x = width / 2 - std::min((int)(0.3f * height), (int)(0.3f * width)) / 2;
 		viewport[CCTV_2].y = height - 0.3f * height;
-		viewport[CCTV_2].w = viewport[CCTV_2].h = (int)(0.3f * height);
+		viewport[CCTV_2].w = viewport[CCTV_2].h = std::min((int)(0.3f * height), (int)(0.3f * width));
 
-		viewport[CCTV_3].x = 0.70f * height;
+		viewport[CCTV_3].x = width - std::min((int)(0.3f * height), (int)(0.3f * width));
 		viewport[CCTV_3].y = height - 0.3f * height;
-		viewport[CCTV_3].w = viewport[CCTV_3].h = (int)(0.3f * height);
+		viewport[CCTV_3].w = viewport[CCTV_3].h = std::min((int)(0.3f * height), (int)(0.3f * width));
 	}
 	else { // CCTV_X, SIDE_CAM, FRONT_CAM, TOP_CAM
 
 	}
 
-	for (int i = 0; i < NUMBER_OF_CAMERAS; i++) {
+	for (int i : id_list) {
+		camera[i].aspect_ratio = (float) viewport[i].w / viewport[i].h;
 		ProjectionMatrix[i] = glm::perspective(camera[i].fov_y*TO_RADIAN, camera[i].aspect_ratio, camera[i].near_clip, camera[i].far_clip);
 		ViewProjectionMatrix[i] = ProjectionMatrix[i] * ViewMatrix[i];
 	}
@@ -291,7 +315,7 @@ void initialize_camera(void) {
 	set_ViewMatrix(TOP_CAM);
 
 	// CCTV 1
-	camera[CCTV_1].pos = glm::vec3(225.0f, 105.0f, 50.0f);
+	camera[CCTV_1].pos = glm::vec3(225.0f, 105.0f, 25.0f);
 	camera[CCTV_1].uaxis = glm::vec3(1.0f, 1.0f, 0.0f);
 	camera[CCTV_1].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[CCTV_1].naxis = glm::vec3(1.0f, -1.0f, 0.0f);
@@ -303,7 +327,7 @@ void initialize_camera(void) {
 	set_ViewMatrix(CCTV_1);
 
 	// CCTV 2
-	camera[CCTV_2].pos = glm::vec3(115.0f, 80.0f, 50.0f);
+	camera[CCTV_2].pos = glm::vec3(115.0f, 80.0f, 25.0f);
 	camera[CCTV_2].uaxis = glm::vec3(0.0f, -1.0f, 0.0f);
 	camera[CCTV_2].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[CCTV_2].naxis = glm::vec3(-1.0f, 0.0f, 0.0f);
@@ -315,7 +339,7 @@ void initialize_camera(void) {
 	set_ViewMatrix(CCTV_2);
 
 	// CCTV 3
-	camera[CCTV_3].pos = glm::vec3(70.0f, 5.0f, 50.0f);
+	camera[CCTV_3].pos = glm::vec3(70.0f, 5.0f, 25.0f);
 	camera[CCTV_3].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
 	camera[CCTV_3].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[CCTV_3].naxis = glm::vec3(0.0f, -1.0f, 0.0f);
