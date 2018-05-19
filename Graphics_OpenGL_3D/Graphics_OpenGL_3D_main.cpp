@@ -10,41 +10,91 @@ GLint loc_ModelViewProjectionMatrix, loc_primitive_color; // indices of uniform 
 // include glm/*.hpp only if necessary
 //#include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp> //translate, rotate, scale, lookAt, perspective, etc.
-glm::mat4 ModelViewProjectionMatrix;
-glm::mat4 ModelViewMatrix, ViewMatrix, ProjectionMatrix;
+
+#define CAM_TRANSLATION_SPEED 0.025f
+#define CAM_ROTATION_SPEED 0.1f
+#define NUMBER_OF_CAMERAS 8
+#define MAIN_CAM 0
+#define FRONT_CAM 1
+#define SIDE_CAM 2
+#define TOP_CAM 3
+#define CCTV_1 4
+#define CCTV_2 5
+#define CCTV_3 6
+#define CCTV_DYN 7
+
+typedef struct _CAMERA {
+	glm::vec3 pos;
+	glm::vec3 uaxis, vaxis, naxis;
+	float fov_y, aspect_ratio, near_clip, far_clip;
+	int move_status;
+} CAMERA;
+CAMERA camera[NUMBER_OF_CAMERAS];
+int camera_selected;
+
+typedef struct _VIEWPORT {
+	int x, y, w, h;
+} VIEWPORT;
+VIEWPORT viewport[NUMBER_OF_CAMERAS];
+
+//glm::mat4 ModelViewMatrix, ViewMatrix, ProjectionMatrix;
+glm::mat4 ViewMatrix[NUMBER_OF_CAMERAS];
+glm::mat4 ModelViewMatrix[NUMBER_OF_CAMERAS];
+glm::mat4 ProjectionMatrix[NUMBER_OF_CAMERAS];
+glm::mat4 ViewProjectionMatrix[NUMBER_OF_CAMERAS];
+glm::mat4 ModelViewProjectionMatrix; // Mp * Mv * Mm
 
 #define TO_RADIAN 0.01745329252f  
 #define TO_DEGREE 57.295779513f
+
+void set_ViewMatrix(int camera_id) {
+	ViewMatrix[camera_id] = glm::mat4(1.0f);
+	ViewMatrix[camera_id][0].x = camera[camera_id].uaxis.x;
+	ViewMatrix[camera_id][0].y = camera[camera_id].vaxis.x;
+	ViewMatrix[camera_id][0].z = camera[camera_id].naxis.x;
+
+	ViewMatrix[camera_id][1].x = camera[camera_id].uaxis.y;
+	ViewMatrix[camera_id][1].y = camera[camera_id].vaxis.y;
+	ViewMatrix[camera_id][1].z = camera[camera_id].naxis.y;
+
+	ViewMatrix[camera_id][2].x = camera[camera_id].uaxis.z;
+	ViewMatrix[camera_id][2].y = camera[camera_id].vaxis.z;
+	ViewMatrix[camera_id][2].z = camera[camera_id].naxis.z;
+
+	ViewMatrix[camera_id] = glm::translate(ViewMatrix[camera_id], -camera[camera_id].pos);
+}
 
 #include "Object_Definitions.h"
 
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	 
+	
 	glLineWidth(2.0f);
-	draw_axes();
+	draw_axes(MAIN_CAM);
 	glLineWidth(1.0f);
  
-    draw_static_object(&(static_objects[OBJ_BUILDING]), 0);
+    draw_static_object(&(static_objects[OBJ_BUILDING]), 0, MAIN_CAM);
 
-	draw_static_object(&(static_objects[OBJ_TABLE]), 0);
-	draw_static_object(&(static_objects[OBJ_TABLE]), 1);
+	draw_static_object(&(static_objects[OBJ_TABLE]), 0, MAIN_CAM);
+	draw_static_object(&(static_objects[OBJ_TABLE]), 1, MAIN_CAM);
 
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 0);
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 1);
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 2);
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 3);
-	draw_static_object(&(static_objects[OBJ_LIGHT]), 4);
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 0, MAIN_CAM);
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 1, MAIN_CAM);
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 2, MAIN_CAM);
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 3, MAIN_CAM);
+	draw_static_object(&(static_objects[OBJ_LIGHT]), 4, MAIN_CAM);
 
-	draw_static_object(&(static_objects[OBJ_TEAPOT]), 0);
-	draw_static_object(&(static_objects[OBJ_NEW_CHAIR]), 0);
- 	draw_static_object(&(static_objects[OBJ_FRAME]), 0);
-	draw_static_object(&(static_objects[OBJ_NEW_PICTURE]), 0);
-	draw_static_object(&(static_objects[OBJ_COW]), 0);
+	draw_static_object(&(static_objects[OBJ_TEAPOT]), 0, MAIN_CAM);
+	draw_static_object(&(static_objects[OBJ_NEW_CHAIR]), 0, MAIN_CAM);
+ 	draw_static_object(&(static_objects[OBJ_FRAME]), 0, MAIN_CAM);
+	draw_static_object(&(static_objects[OBJ_NEW_PICTURE]), 0, MAIN_CAM);
+	draw_static_object(&(static_objects[OBJ_COW]), 0, MAIN_CAM);
 
-	draw_animated_tiger();
-
+	draw_animated_tiger(MAIN_CAM);
 	glutSwapBuffers();
+}
+
+void motion(int x, int y) {
 }
 
 void keyboard(unsigned char key, int x, int y) {
@@ -105,10 +155,14 @@ void keyboard(unsigned char key, int x, int y) {
 
 void reshape(int width, int height) {
 	float aspect_ratio;
-	glViewport(0, 0, width, height);
-	
 	aspect_ratio = (float)width / height;
-	ProjectionMatrix = glm::perspective(15.0f*TO_RADIAN, aspect_ratio, 1.0f, 10000.0f);
+	glViewport(0, 0, width, height);
+	camera[MAIN_CAM].aspect_ratio = aspect_ratio;
+	viewport[MAIN_CAM].x = viewport[MAIN_CAM].y = 0;
+	viewport[MAIN_CAM].w = (int)(0.70f*width);
+	viewport[MAIN_CAM].h = (int)(0.70f*height);
+	ProjectionMatrix[MAIN_CAM] = glm::perspective(camera[MAIN_CAM].fov_y*TO_RADIAN, camera[MAIN_CAM].aspect_ratio, camera[MAIN_CAM].near_clip, camera[MAIN_CAM].far_clip);
+	ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
 
 	glutPostRedisplay();
 }
@@ -123,6 +177,7 @@ void timer_scene(int timestamp_scene) {
 void register_callbacks(void) {
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
+	glutMotionFunc(motion);
 	glutReshapeFunc(reshape);
 	glutTimerFunc(100, timer_scene, 0);
 	glutCloseFunc(cleanup_OpenGL_stuffs);
@@ -141,12 +196,42 @@ void prepare_shader_program(void) {
 	loc_primitive_color = glGetUniformLocation(h_ShaderProgram, "u_primitive_color");
 }
 
+void initialize_camera(void) {
+	/*
+	MAIN_CAM 0
+	FRONT_CAM 1
+	SIDE_CAM 2
+	TOP_CAM 3
+	CCTV_1 4
+	CCTV_2 5
+	CCTV_3 6
+	CCTV_DYN 7
+	*/
+
+	camera[MAIN_CAM].pos = glm::vec3(600.0f, 600.0f, 200.0f);
+	camera[MAIN_CAM].uaxis = glm::vec3(600.0f, 600.0f, 200.0f); // right
+	camera[MAIN_CAM].vaxis = glm::vec3(600.0f, 600.0f, 200.0f); // up
+	camera[MAIN_CAM].naxis = glm::vec3(600.0f, 600.0f, 200.0f); // back
+
+	camera[MAIN_CAM].move_status = 0;
+	camera[MAIN_CAM].fov_y = 15.0f;
+	camera[MAIN_CAM].aspect_ratio = 1.0f; // will be set when the viewing window pops up.
+	camera[MAIN_CAM].near_clip = 1.0f;
+	camera[MAIN_CAM].far_clip = 10000.0f;
+	
+	//set_ViewMatrix(MAIN_CAM);
+	ViewMatrix[MAIN_CAM] = glm::lookAt(glm::vec3(600.0f, 600.0f, 200.0f), glm::vec3(125.0f, 80.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+}
+
 void initialize_OpenGL(void) {
 	glEnable(GL_DEPTH_TEST); // Default state
 	 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glClearColor(0.12f, 0.18f, 0.12f, 1.0f);
 
+	initialize_camera();
+
+	/*
 	if (0) {
 		ViewMatrix = glm::lookAt(glm::vec3(120.0f, 90.0f, 1000.0f), glm::vec3(120.0f, 90.0f, 0.0f),
 			glm::vec3(-10.0f, 0.0f, 0.0f));
@@ -160,6 +245,7 @@ void initialize_OpenGL(void) {
 		ViewMatrix = glm::lookAt(glm::vec3(600.0f, 600.0f, 200.0f), glm::vec3(125.0f, 80.0f, 25.0f),
 			glm::vec3(0.0f, 0.0f, 1.0f));
 	}
+	*/
 }
 
 void prepare_scene(void) {
