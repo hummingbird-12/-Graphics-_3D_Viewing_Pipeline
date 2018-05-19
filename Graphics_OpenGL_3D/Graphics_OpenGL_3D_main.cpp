@@ -37,6 +37,10 @@ typedef struct _VIEWPORT {
 } VIEWPORT;
 VIEWPORT viewport[NUMBER_OF_CAMERAS];
 
+int ViewMode;
+#define EXTERIOR_MODE 0
+#define INTERIOR_MODE 1
+
 //glm::mat4 ModelViewMatrix, ViewMatrix, ProjectionMatrix;
 glm::mat4 ViewMatrix[NUMBER_OF_CAMERAS];
 glm::mat4 ModelViewMatrix[NUMBER_OF_CAMERAS];
@@ -156,13 +160,36 @@ void keyboard(unsigned char key, int x, int y) {
 void reshape(int width, int height) {
 	float aspect_ratio;
 	aspect_ratio = (float)width / height;
-	glViewport(0, 0, width, height);
-	camera[MAIN_CAM].aspect_ratio = aspect_ratio;
-	viewport[MAIN_CAM].x = viewport[MAIN_CAM].y = 0;
-	viewport[MAIN_CAM].w = (int)(0.70f*width);
-	viewport[MAIN_CAM].h = (int)(0.70f*height);
-	ProjectionMatrix[MAIN_CAM] = glm::perspective(camera[MAIN_CAM].fov_y*TO_RADIAN, camera[MAIN_CAM].aspect_ratio, camera[MAIN_CAM].near_clip, camera[MAIN_CAM].far_clip);
-	ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+
+	//glViewport(0, 0, width, height);
+
+	if (ViewMode == EXTERIOR_MODE) { // MAIN_CAM, CCTV_1, CCTV_2, CCTV_3
+
+		viewport[MAIN_CAM].x = viewport[MAIN_CAM].y = 0;
+		viewport[MAIN_CAM].w = (int)(1.0f * width);
+		viewport[MAIN_CAM].h = (int)(0.7f * height);
+		camera[MAIN_CAM].aspect_ratio = (1.0f * width) / (0.7f * height);
+
+		viewport[CCTV_1].x = 0;
+		viewport[CCTV_1].y = height - 0.3f * height;
+		viewport[CCTV_1].w = viewport[CCTV_1].h = (int)(0.3f * height);
+
+		viewport[CCTV_2].x = 0.35f * height;
+		viewport[CCTV_2].y = height - 0.3f * height;
+		viewport[CCTV_2].w = viewport[CCTV_2].h = (int)(0.3f * height);
+
+		viewport[CCTV_3].x = 0.70f * height;
+		viewport[CCTV_3].y = height - 0.3f * height;
+		viewport[CCTV_3].w = viewport[CCTV_3].h = (int)(0.3f * height);
+	}
+	else { // CCTV_X, SIDE_CAM, FRONT_CAM, TOP_CAM
+
+	}
+
+	for (int i = 0; i < NUMBER_OF_CAMERAS; i++) {
+		ProjectionMatrix[i] = glm::perspective(camera[i].fov_y*TO_RADIAN, camera[i].aspect_ratio, camera[i].near_clip, camera[i].far_clip);
+		ViewProjectionMatrix[i] = ProjectionMatrix[i] * ViewMatrix[i];
+	}
 
 	glutPostRedisplay();
 }
@@ -197,6 +224,10 @@ void prepare_shader_program(void) {
 }
 
 void initialize_camera(void) {
+	glm::mat4 temp;
+
+	ViewMode = EXTERIOR_MODE;
+
 	/*
 	MAIN_CAM 0
 	FRONT_CAM 1
@@ -208,19 +239,110 @@ void initialize_camera(void) {
 	CCTV_DYN 7
 	*/
 
+	// MAIN CAMERA
+	temp = glm::lookAt(glm::vec3(600.0f, 600.0f, 200.0f), glm::vec3(125.0f, 80.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	camera[MAIN_CAM].pos = glm::vec3(600.0f, 600.0f, 200.0f);
-	camera[MAIN_CAM].uaxis = glm::vec3(600.0f, 600.0f, 200.0f); // right
-	camera[MAIN_CAM].vaxis = glm::vec3(600.0f, 600.0f, 200.0f); // up
-	camera[MAIN_CAM].naxis = glm::vec3(600.0f, 600.0f, 200.0f); // back
+	camera[MAIN_CAM].uaxis = glm::vec3(temp[0].x, temp[1].x, temp[2].x); // right
+	camera[MAIN_CAM].vaxis = glm::vec3(temp[0].y, temp[1].y, temp[2].y); // up
+	camera[MAIN_CAM].naxis = glm::vec3(temp[0].z, temp[1].z, temp[2].z); // back
 
-	camera[MAIN_CAM].move_status = 0;
 	camera[MAIN_CAM].fov_y = 15.0f;
-	camera[MAIN_CAM].aspect_ratio = 1.0f; // will be set when the viewing window pops up.
 	camera[MAIN_CAM].near_clip = 1.0f;
 	camera[MAIN_CAM].far_clip = 10000.0f;
-	
-	//set_ViewMatrix(MAIN_CAM);
-	ViewMatrix[MAIN_CAM] = glm::lookAt(glm::vec3(600.0f, 600.0f, 200.0f), glm::vec3(125.0f, 80.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	set_ViewMatrix(MAIN_CAM);
+
+	// FRONT CAMERA
+	camera[FRONT_CAM].pos = glm::vec3(120.0f, -1000.0f, 25.0f);
+	camera[FRONT_CAM].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
+	camera[FRONT_CAM].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
+	camera[FRONT_CAM].naxis = glm::vec3(0.0f, -1.0f, 0.0f);
+
+	camera[FRONT_CAM].fov_y = 30.0f;
+	camera[FRONT_CAM].near_clip = 1.0f;
+	camera[FRONT_CAM].far_clip = 10000.0f;
+
+	set_ViewMatrix(FRONT_CAM);
+
+	// SIDE CAMERA
+	//temp = glm::lookAt(glm::vec3(800.0f, 85.0f, 25.0f), glm::vec3(0.0f, 90.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	camera[SIDE_CAM].pos = glm::vec3(800.0f, 85.0f, 25.0f);
+	camera[SIDE_CAM].uaxis = glm::vec3(0.0f, 1.0f, 0.0f);
+	camera[SIDE_CAM].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
+	camera[SIDE_CAM].naxis = glm::vec3(1.0f, 0.0f, 0.0f);
+
+	camera[SIDE_CAM].fov_y = 30.0f;
+	camera[SIDE_CAM].near_clip = 1.0f;
+	camera[SIDE_CAM].far_clip = 10000.0f;
+
+	set_ViewMatrix(SIDE_CAM);
+
+	// TOP CAMERA
+	//temp = glm::lookAt(glm::vec3(120.0f, 90.0f, 1000.0f), glm::vec3(120.0f, 90.0f, 0.0f), glm::vec3(-10.0f, 0.0f, 0.0f));
+	camera[TOP_CAM].pos = glm::vec3(120.0f, 90.0f, 1000.0f);
+	camera[TOP_CAM].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
+	camera[TOP_CAM].vaxis = glm::vec3(0.0f, 1.0f, 0.0f);
+	camera[TOP_CAM].naxis = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	camera[TOP_CAM].fov_y = 30.0f;
+	camera[TOP_CAM].near_clip = 1.0f;
+	camera[TOP_CAM].far_clip = 10000.0f;
+
+	set_ViewMatrix(TOP_CAM);
+
+	// CCTV 1
+	camera[CCTV_1].pos = glm::vec3(225.0f, 105.0f, 50.0f);
+	camera[CCTV_1].uaxis = glm::vec3(1.0f, 1.0f, 0.0f);
+	camera[CCTV_1].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
+	camera[CCTV_1].naxis = glm::vec3(1.0f, -1.0f, 0.0f);
+
+	camera[CCTV_1].fov_y = 30.0f;
+	camera[CCTV_1].near_clip = 0.01f;
+	camera[CCTV_1].far_clip = 500.0f;
+
+	set_ViewMatrix(CCTV_1);
+
+	// CCTV 2
+	camera[CCTV_2].pos = glm::vec3(115.0f, 80.0f, 50.0f);
+	camera[CCTV_2].uaxis = glm::vec3(0.0f, -1.0f, 0.0f);
+	camera[CCTV_2].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
+	camera[CCTV_2].naxis = glm::vec3(-1.0f, 0.0f, 0.0f);
+
+	camera[CCTV_2].fov_y = 30.0f;
+	camera[CCTV_2].near_clip = 0.01f;
+	camera[CCTV_2].far_clip = 500.0f;
+
+	set_ViewMatrix(CCTV_2);
+
+	// CCTV 3
+	camera[CCTV_3].pos = glm::vec3(70.0f, 5.0f, 50.0f);
+	camera[CCTV_3].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
+	camera[CCTV_3].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
+	camera[CCTV_3].naxis = glm::vec3(0.0f, -1.0f, 0.0f);
+
+	camera[CCTV_3].fov_y = 30.0f;
+	camera[CCTV_3].near_clip = 0.01f;
+	camera[CCTV_3].far_clip = 500.0f;
+
+	set_ViewMatrix(CCTV_3);
+
+	// DYNAMIC CCTV
+	camera[CCTV_DYN].pos = glm::vec3(35.0f, 135.0f, 25.0f);
+	camera[CCTV_DYN].uaxis = glm::vec3(-1.0f, 0.0f, 0.0f);
+	camera[CCTV_DYN].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
+	camera[CCTV_DYN].naxis = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	camera[CCTV_DYN].fov_y = 30.0f;
+	camera[CCTV_DYN].near_clip = 0.01f;
+	camera[CCTV_DYN].far_clip = 500.0f;
+
+	set_ViewMatrix(CCTV_DYN);
+
+	// set move status to false
+	for (int i = 0; i < NUMBER_OF_CAMERAS; i++) {
+		camera[i].move_status = 0;
+		camera[i].aspect_ratio = 1.0f;
+	}
 }
 
 void initialize_OpenGL(void) {
@@ -232,11 +354,11 @@ void initialize_OpenGL(void) {
 	initialize_camera();
 
 	/*
-	if (0) {
+	if (0) { // top
 		ViewMatrix = glm::lookAt(glm::vec3(120.0f, 90.0f, 1000.0f), glm::vec3(120.0f, 90.0f, 0.0f),
 			glm::vec3(-10.0f, 0.0f, 0.0f));
 	}
-	if (0) {
+	if (0) { // side
 		ViewMatrix = glm::lookAt(glm::vec3(800.0f, 90.0f, 25.0f), glm::vec3(0.0f, 90.0f, 25.0f),
 			glm::vec3(0.0f, 0.0f, 1.0f));
 	}
