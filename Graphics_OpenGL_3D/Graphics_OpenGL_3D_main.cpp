@@ -107,8 +107,8 @@ void display(void) {
 		display_camera(CCTV_2);
 		display_camera(CCTV_3);
 	}
-	else { // CCTV_X, SIDE_CAM, FRONT_CAM, TOP_CAM
-		display_camera(CCTV_1);
+	else { // INTERIOR_MODE : CCTV_DYN, SIDE_CAM, FRONT_CAM, TOP_CAM
+		display_camera(CCTV_DYN);
 		display_camera(SIDE_CAM);
 		display_camera(FRONT_CAM);
 		display_camera(TOP_CAM);
@@ -172,45 +172,66 @@ void keyboard(unsigned char key, int x, int y) {
 		}
 		glutPostRedisplay();
 		break;
+	case 'i':
+		ViewMode = INTERIOR_MODE;
+		fprintf(stdout, "^^^ Switched to interior view.\n");
+		glutPostRedisplay();
+		break;
+	case 'e':
+		ViewMode = EXTERIOR_MODE;
+		fprintf(stdout, "^^^ Switched to exterior view.\n");
+		glutPostRedisplay();
+		break;
 	}
 }
 
 void reshape(int width, int height) {
 	float aspect_ratio;
-	int id_list[4];
 	aspect_ratio = (float)width / height;
 
-	//glViewport(0, 0, width, height);
+	// EXTERIOR_MODE : MAIN_CAM, CCTV_1, CCTV_2, CCTV_3
 
-	if (ViewMode == EXTERIOR_MODE) { // MAIN_CAM, CCTV_1, CCTV_2, CCTV_3
-		id_list[0] = MAIN_CAM;
-		id_list[1] = CCTV_1;
-		id_list[2] = CCTV_2;
-		id_list[3] = CCTV_3;
+	viewport[MAIN_CAM].x = viewport[MAIN_CAM].y = 0;
+	viewport[MAIN_CAM].w = (int)(1.0f * width);
+	viewport[MAIN_CAM].h = (int)(0.7f * height);
 
-		viewport[MAIN_CAM].x = viewport[MAIN_CAM].y = 0;
-		viewport[MAIN_CAM].w = (int)(1.0f * width);
-		viewport[MAIN_CAM].h = (int)(0.7f * height);
-		//camera[MAIN_CAM].aspect_ratio = (1.0f * width) / (0.7f * height);
+	viewport[CCTV_1].x = 0;
+	viewport[CCTV_1].y = height - 0.3f * height;
+	viewport[CCTV_1].w = viewport[CCTV_1].h = std::min((int)(0.3f * height), (int)(0.3f * width));
 
-		viewport[CCTV_1].x = 0;
-		viewport[CCTV_1].y = height - 0.3f * height;
-		viewport[CCTV_1].w = viewport[CCTV_1].h = std::min((int)(0.3f * height), (int)(0.3f * width));
+	viewport[CCTV_2].x = width / 2 - std::min((int)(0.3f * height), (int)(0.3f * width)) / 2;
+	viewport[CCTV_2].y = height - 0.3f * height;
+	viewport[CCTV_2].w = viewport[CCTV_2].h = std::min((int)(0.3f * height), (int)(0.3f * width));
 
-		viewport[CCTV_2].x = width / 2 - std::min((int)(0.3f * height), (int)(0.3f * width)) / 2;
-		viewport[CCTV_2].y = height - 0.3f * height;
-		viewport[CCTV_2].w = viewport[CCTV_2].h = std::min((int)(0.3f * height), (int)(0.3f * width));
+	viewport[CCTV_3].x = width - std::min((int)(0.3f * height), (int)(0.3f * width));
+	viewport[CCTV_3].y = height - 0.3f * height;
+	viewport[CCTV_3].w = viewport[CCTV_3].h = std::min((int)(0.3f * height), (int)(0.3f * width));
 
-		viewport[CCTV_3].x = width - std::min((int)(0.3f * height), (int)(0.3f * width));
-		viewport[CCTV_3].y = height - 0.3f * height;
-		viewport[CCTV_3].w = viewport[CCTV_3].h = std::min((int)(0.3f * height), (int)(0.3f * width));
-	}
-	else { // CCTV_X, SIDE_CAM, FRONT_CAM, TOP_CAM
+	// INTERIOR_MODE : CCTV_DYN, SIDE_CAM, FRONT_CAM, TOP_CAM
 
-	}
+	viewport[CCTV_DYN].x = width * 0.4f;
+	viewport[CCTV_DYN].y = 0.0f;
+	viewport[CCTV_DYN].w = width * 0.6f;
+	viewport[CCTV_DYN].h = height;
 
-	for (int i : id_list) {
-		camera[i].aspect_ratio = (float) viewport[i].w / viewport[i].h;
+	viewport[SIDE_CAM].x = 0.0f;
+	viewport[SIDE_CAM].y = height * 0.75f;
+	viewport[SIDE_CAM].w = width * 0.4f * 0.7f;
+	viewport[SIDE_CAM].h = height * 0.25f;
+
+	viewport[FRONT_CAM].x = 0.0f;
+	viewport[FRONT_CAM].y = height * 0.5f;
+	viewport[FRONT_CAM].w = width * 0.4f;
+	viewport[FRONT_CAM].h = height * 0.25f;
+
+	viewport[TOP_CAM].x = 0.0f;
+	viewport[TOP_CAM].y = 0.0f;
+	viewport[TOP_CAM].w = width * 0.4f;
+	viewport[TOP_CAM].h = height * 0.5f;
+
+	for (int i = 0; i < NUMBER_OF_CAMERAS; i++) {
+		camera[i].aspect_ratio = (float)viewport[i].w / viewport[i].h;
+		camera[SIDE_CAM].aspect_ratio = 1;
 		ProjectionMatrix[i] = glm::perspective(camera[i].fov_y*TO_RADIAN, camera[i].aspect_ratio, camera[i].near_clip, camera[i].far_clip);
 		ViewProjectionMatrix[i] = ProjectionMatrix[i] * ViewMatrix[i];
 	}
@@ -277,12 +298,12 @@ void initialize_camera(void) {
 	set_ViewMatrix(MAIN_CAM);
 
 	// FRONT CAMERA
-	camera[FRONT_CAM].pos = glm::vec3(120.0f, -1000.0f, 25.0f);
+	camera[FRONT_CAM].pos = glm::vec3(120.0f, -400.0f, 25.0f);
 	camera[FRONT_CAM].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
 	camera[FRONT_CAM].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[FRONT_CAM].naxis = glm::vec3(0.0f, -1.0f, 0.0f);
 
-	camera[FRONT_CAM].fov_y = 30.0f;
+	camera[FRONT_CAM].fov_y = 15.0f;
 	camera[FRONT_CAM].near_clip = 1.0f;
 	camera[FRONT_CAM].far_clip = 10000.0f;
 
@@ -290,12 +311,12 @@ void initialize_camera(void) {
 
 	// SIDE CAMERA
 	//temp = glm::lookAt(glm::vec3(800.0f, 85.0f, 25.0f), glm::vec3(0.0f, 90.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	camera[SIDE_CAM].pos = glm::vec3(800.0f, 85.0f, 25.0f);
+	camera[SIDE_CAM].pos = glm::vec3(500.0f, 85.0f, 25.0f);
 	camera[SIDE_CAM].uaxis = glm::vec3(0.0f, 1.0f, 0.0f);
 	camera[SIDE_CAM].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[SIDE_CAM].naxis = glm::vec3(1.0f, 0.0f, 0.0f);
 
-	camera[SIDE_CAM].fov_y = 30.0f;
+	camera[SIDE_CAM].fov_y = 15.0f;
 	camera[SIDE_CAM].near_clip = 1.0f;
 	camera[SIDE_CAM].far_clip = 10000.0f;
 
@@ -303,12 +324,12 @@ void initialize_camera(void) {
 
 	// TOP CAMERA
 	//temp = glm::lookAt(glm::vec3(120.0f, 90.0f, 1000.0f), glm::vec3(120.0f, 90.0f, 0.0f), glm::vec3(-10.0f, 0.0f, 0.0f));
-	camera[TOP_CAM].pos = glm::vec3(120.0f, 90.0f, 1000.0f);
+	camera[TOP_CAM].pos = glm::vec3(120.0f, 90.0f, 900.0f);
 	camera[TOP_CAM].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
 	camera[TOP_CAM].vaxis = glm::vec3(0.0f, 1.0f, 0.0f);
 	camera[TOP_CAM].naxis = glm::vec3(0.0f, 0.0f, 1.0f);
 
-	camera[TOP_CAM].fov_y = 30.0f;
+	camera[TOP_CAM].fov_y = 15.0f;
 	camera[TOP_CAM].near_clip = 1.0f;
 	camera[TOP_CAM].far_clip = 10000.0f;
 
@@ -356,7 +377,7 @@ void initialize_camera(void) {
 	camera[CCTV_DYN].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[CCTV_DYN].naxis = glm::vec3(0.0f, 1.0f, 0.0f);
 
-	camera[CCTV_DYN].fov_y = 30.0f;
+	camera[CCTV_DYN].fov_y = 60.0f;
 	camera[CCTV_DYN].near_clip = 0.01f;
 	camera[CCTV_DYN].far_clip = 500.0f;
 
@@ -376,22 +397,6 @@ void initialize_OpenGL(void) {
 	glClearColor(0.12f, 0.18f, 0.12f, 1.0f);
 
 	initialize_camera();
-
-	/*
-	if (0) { // top
-		ViewMatrix = glm::lookAt(glm::vec3(120.0f, 90.0f, 1000.0f), glm::vec3(120.0f, 90.0f, 0.0f),
-			glm::vec3(-10.0f, 0.0f, 0.0f));
-	}
-	if (0) { // side
-		ViewMatrix = glm::lookAt(glm::vec3(800.0f, 90.0f, 25.0f), glm::vec3(0.0f, 90.0f, 25.0f),
-			glm::vec3(0.0f, 0.0f, 1.0f));
-	}
-
-	if (1) {
-		ViewMatrix = glm::lookAt(glm::vec3(600.0f, 600.0f, 200.0f), glm::vec3(125.0f, 80.0f, 25.0f),
-			glm::vec3(0.0f, 0.0f, 1.0f));
-	}
-	*/
 }
 
 void prepare_scene(void) {
