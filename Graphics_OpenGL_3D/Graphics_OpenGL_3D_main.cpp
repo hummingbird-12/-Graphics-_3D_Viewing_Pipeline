@@ -43,6 +43,12 @@ int ViewMode;
 #define EXTERIOR_MODE 0
 #define INTERIOR_MODE 1
 
+typedef struct _CALLBACK_CONTEXT {
+	int left_button;
+	int prevX, prevY;
+} CALLBACK_CONTEXT;
+CALLBACK_CONTEXT CC;
+
 //glm::mat4 ModelViewMatrix, ViewMatrix, ProjectionMatrix;
 glm::mat4 ViewMatrix[NUMBER_OF_CAMERAS];
 glm::mat4 ModelViewMatrix[NUMBER_OF_CAMERAS];
@@ -131,11 +137,51 @@ void camera_rotate(int camera_id, float angle, glm::vec3 axis) {
 	camera[camera_id].naxis = rotation * camera[camera_id].naxis;
 }
 
+void mousepress(int button, int state, int x, int y) {
+	if (button == GLUT_LEFT_BUTTON) {
+		if (state == GLUT_DOWN) {
+			CC.left_button = GLUT_DOWN;
+			CC.prevX = x;
+			CC.prevY = y;
+
+			if (ViewMode == EXTERIOR_MODE)
+				camera[MAIN_CAM].move_status = 1;
+			else // INTERIOR_MODE
+				camera[CCTV_DYN].move_status = 1;
+		}
+		else if (state == GLUT_UP) {
+			CC.left_button = GLUT_UP;
+			camera[MAIN_CAM].move_status = camera[CCTV_DYN].move_status = 0;
+		}
+	}
+}
+
 void motion(int x, int y) {
+	float dispX, dispY;
+	int target_cam = (ViewMode == EXTERIOR_MODE ? MAIN_CAM : CCTV_DYN);
+
+	if (!(camera[MAIN_CAM].move_status || camera[CCTV_DYN].move_status)) return;
+
+	dispX = (float)(x - CC.prevX);
+	dispY = (float)(CC.prevY - y);
+	CC.prevX = x;
+	CC.prevY = y;
+
+	switch (glutGetModifiers()) {
+	default:
+		camera_rotate(target_cam, dispX, -camera[target_cam].vaxis);
+		camera_rotate(target_cam, dispY, -camera[target_cam].uaxis);
+		break;
+	}
+
+	set_ViewMatrix(target_cam);
+	ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
+	glutPostRedisplay();
 }
 
 void keyboard(unsigned char key, int x, int y) {
 	static int flag_cull_face = 0, polygon_fill_on = 0, depth_test_on = 0;
+	int target_cam = (ViewMode == EXTERIOR_MODE ? MAIN_CAM : CCTV_DYN);
 
 	switch (key) {
 	case 27: // ESC key
@@ -199,67 +245,95 @@ void keyboard(unsigned char key, int x, int y) {
 		fprintf(stdout, "^^^ Switched to exterior view.\n");
 		glutPostRedisplay();
 		break;
-	case 'w':
+	case 'w': // front & up
 	case 'W':
-		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) // translate forwards
-			camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].naxis);
-		else if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate frontwards
-			camera_rotate(MAIN_CAM, -5.0f, camera[MAIN_CAM].uaxis);
-		else // translate upwards
-			camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].vaxis);
-		set_ViewMatrix(MAIN_CAM);
-		ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+		if (ViewMode == EXTERIOR_MODE) {
+			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) // translate frontwards
+				camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].naxis);
+			else if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate frontwards
+				camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].uaxis);
+			else // translate upwards
+				camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].vaxis);
+		}
+		else { // INTERIOR_MODE
+			camera_rotate(CCTV_DYN, 5.0f, camera[CCTV_DYN].uaxis); // rotate frontwards
+		}
+		set_ViewMatrix(target_cam);
+		ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
 		glutPostRedisplay();
 		break;
-	case 'a':
+	case 'a': // left
 	case 'A':
-		if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate leftwards
-			camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].vaxis);
-		else // translate leftwards
-			camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].uaxis);
-		set_ViewMatrix(MAIN_CAM);
-		ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+		if (ViewMode == EXTERIOR_MODE) {
+			if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate leftwards
+				camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].vaxis);
+			else // translate leftwards
+				camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].uaxis);
+		}
+		else { // INTERIOR_MODE
+			camera_rotate(CCTV_DYN, 5.0f, camera[CCTV_DYN].vaxis); // rotate leftwards
+		}
+		set_ViewMatrix(target_cam);
+		ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
 		glutPostRedisplay();
 		break;
-	case 's':
+	case 's': // back & down
 	case 'S':
-		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) // translate backwards
-			camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].naxis);
-		else if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate backwards
-			camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].uaxis);
-		else // translate downwards
-			camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].vaxis);
-		set_ViewMatrix(MAIN_CAM);
-		ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+		if (ViewMode == EXTERIOR_MODE) {
+			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) // translate backwards
+				camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].naxis);
+			else if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate backwards
+				camera_rotate(MAIN_CAM, 5.0f, -camera[MAIN_CAM].uaxis);
+			else // translate downwards
+				camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].vaxis);
+		}
+		else { // INTERIOR_MODE
+			camera_rotate(CCTV_DYN, 5.0f, -camera[CCTV_DYN].uaxis); // rotate backwards
+		}
+		set_ViewMatrix(target_cam);
+		ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
 		glutPostRedisplay();
 		break;
-	case 'd':
+	case 'd': // right
 	case 'D':
-		if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate rightwards
-			camera_rotate(MAIN_CAM, -60.0f, camera[MAIN_CAM].vaxis);
-		else // translate rightwards
-			camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].uaxis);
-		set_ViewMatrix(MAIN_CAM);
-		ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+		if (ViewMode == EXTERIOR_MODE) {
+			if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate rightwards
+				camera_rotate(MAIN_CAM, 5.0f, -camera[MAIN_CAM].vaxis);
+			else // translate rightwards
+				camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].uaxis);
+		}
+		else { // INTERIOR_MODE
+			camera_rotate(CCTV_DYN, 5.0f, -camera[CCTV_DYN].vaxis); // rotate rightwards
+		}
+		set_ViewMatrix(target_cam);
+		ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
 		glutPostRedisplay();
 		break;
-	case 'q':
+	case 'q': // counterclockwise
 	case 'Q':
-		if (glutGetModifiers() == GLUT_ACTIVE_ALT) { // rotate counterclockwise
-			camera_rotate(MAIN_CAM, -5.0f, camera[MAIN_CAM].naxis);
-			set_ViewMatrix(MAIN_CAM);
-			ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
-			glutPostRedisplay();
+		if (ViewMode == EXTERIOR_MODE) {
+			if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate counterclockwise
+				camera_rotate(MAIN_CAM, 5.0f, -camera[MAIN_CAM].naxis);
 		}
+		else { // INTERIOR_MODE
+			camera_rotate(CCTV_DYN, 5.0f, -camera[CCTV_DYN].naxis); // rotate counterclockwise
+		}
+		set_ViewMatrix(target_cam);
+		ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
+		glutPostRedisplay();
 		break;
-	case 'e':
+	case 'e': // clockwise
 	case 'E':
-		if (glutGetModifiers() == GLUT_ACTIVE_ALT) { // rotate clockwise
-			camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].naxis);
-			set_ViewMatrix(MAIN_CAM);
-			ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
-			glutPostRedisplay();
+		if (ViewMode == EXTERIOR_MODE) {
+			if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate clockwise
+				camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].naxis);
 		}
+		else { // INTERIOR_MODE
+			camera_rotate(CCTV_DYN, 5.0f, camera[CCTV_DYN].naxis); // rotate clockwise
+		}
+		set_ViewMatrix(target_cam);
+		ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
+		glutPostRedisplay();
 		break;
 	}
 }
@@ -326,8 +400,11 @@ void timer_scene(int timestamp_scene) {
 }
 
 void register_callbacks(void) {
+	CC.left_button = GLUT_UP;
+
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
+	glutMouseFunc(mousepress);
 	glutMotionFunc(motion);
 	glutReshapeFunc(reshape);
 	glutTimerFunc(100, timer_scene, 0);
