@@ -14,6 +14,7 @@ GLint loc_ModelViewProjectionMatrix, loc_primitive_color; // indices of uniform 
 
 #define CAM_TRANSLATION_SPEED 0.025f
 #define CAM_ROTATION_SPEED 0.1f
+
 #define NUMBER_OF_CAMERAS 8
 #define MAIN_CAM 0
 #define FRONT_CAM 1
@@ -116,6 +117,20 @@ void display(void) {
 	glutSwapBuffers();
 }
 
+void camera_translate(int camera_id, float displacement, glm::vec3 axis) {
+	camera[camera_id].pos += CAM_TRANSLATION_SPEED * displacement * axis;
+}
+
+void camera_rotate(int camera_id, float angle, glm::vec3 axis) {
+	glm::mat3 rotation;
+
+	rotation = glm::mat3(glm::rotate(glm::mat4(1.0f), CAM_ROTATION_SPEED * TO_RADIAN * angle, axis));
+
+	camera[camera_id].uaxis = rotation * camera[camera_id].uaxis;
+	camera[camera_id].vaxis = rotation * camera[camera_id].vaxis;
+	camera[camera_id].naxis = rotation * camera[camera_id].naxis;
+}
+
 void motion(int x, int y) {
 }
 
@@ -126,7 +141,7 @@ void keyboard(unsigned char key, int x, int y) {
 	case 27: // ESC key
 		glutLeaveMainLoop(); // Incur destuction callback for cleanups.
 		break;
-	case 'c':
+	case '7': // face cull toggle
 		flag_cull_face = (flag_cull_face + 1) % 3;
 		switch (flag_cull_face) {
 		case 0:
@@ -148,7 +163,7 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		}
 		break;
-	case 'f':
+	case '8': // draw/fill toggle
 		polygon_fill_on = 1 - polygon_fill_on;
 		if (polygon_fill_on) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -160,7 +175,7 @@ void keyboard(unsigned char key, int x, int y) {
 		}
 		glutPostRedisplay();
 		break;
-	case 'd':
+	case '9': // depth test toggle
 		depth_test_on = 1 - depth_test_on;
 		if (depth_test_on) {
 			glEnable(GL_DEPTH_TEST);
@@ -172,15 +187,79 @@ void keyboard(unsigned char key, int x, int y) {
 		}
 		glutPostRedisplay();
 		break;
-	case 'i':
+	case 'i': // interior view mode toggle
+	case 'I':
 		ViewMode = INTERIOR_MODE;
 		fprintf(stdout, "^^^ Switched to interior view.\n");
 		glutPostRedisplay();
 		break;
-	case 'e':
+	case 'o': // exterior view mode toggle
+	case 'O':
 		ViewMode = EXTERIOR_MODE;
 		fprintf(stdout, "^^^ Switched to exterior view.\n");
 		glutPostRedisplay();
+		break;
+	case 'w':
+	case 'W':
+		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) // translate forwards
+			camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].naxis);
+		else if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate frontwards
+			camera_rotate(MAIN_CAM, -5.0f, camera[MAIN_CAM].uaxis);
+		else // translate upwards
+			camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].vaxis);
+		set_ViewMatrix(MAIN_CAM);
+		ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+		glutPostRedisplay();
+		break;
+	case 'a':
+	case 'A':
+		if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate leftwards
+			camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].vaxis);
+		else // translate leftwards
+			camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].uaxis);
+		set_ViewMatrix(MAIN_CAM);
+		ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+		glutPostRedisplay();
+		break;
+	case 's':
+	case 'S':
+		if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) // translate backwards
+			camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].naxis);
+		else if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate backwards
+			camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].uaxis);
+		else // translate downwards
+			camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].vaxis);
+		set_ViewMatrix(MAIN_CAM);
+		ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+		glutPostRedisplay();
+		break;
+	case 'd':
+	case 'D':
+		if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate rightwards
+			camera_rotate(MAIN_CAM, -60.0f, camera[MAIN_CAM].vaxis);
+		else // translate rightwards
+			camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].uaxis);
+		set_ViewMatrix(MAIN_CAM);
+		ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+		glutPostRedisplay();
+		break;
+	case 'q':
+	case 'Q':
+		if (glutGetModifiers() == GLUT_ACTIVE_ALT) { // rotate counterclockwise
+			camera_rotate(MAIN_CAM, -5.0f, camera[MAIN_CAM].naxis);
+			set_ViewMatrix(MAIN_CAM);
+			ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+			glutPostRedisplay();
+		}
+		break;
+	case 'e':
+	case 'E':
+		if (glutGetModifiers() == GLUT_ACTIVE_ALT) { // rotate clockwise
+			camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].naxis);
+			set_ViewMatrix(MAIN_CAM);
+			ViewProjectionMatrix[MAIN_CAM] = ProjectionMatrix[MAIN_CAM] * ViewMatrix[MAIN_CAM];
+			glutPostRedisplay();
+		}
 		break;
 	}
 }
@@ -231,7 +310,7 @@ void reshape(int width, int height) {
 
 	for (int i = 0; i < NUMBER_OF_CAMERAS; i++) {
 		camera[i].aspect_ratio = (float)viewport[i].w / viewport[i].h;
-		camera[SIDE_CAM].aspect_ratio = 1;
+		//camera[MAIN_CAM].aspect_ratio = 1;
 		ProjectionMatrix[i] = glm::perspective(camera[i].fov_y*TO_RADIAN, camera[i].aspect_ratio, camera[i].near_clip, camera[i].far_clip);
 		ViewProjectionMatrix[i] = ProjectionMatrix[i] * ViewMatrix[i];
 	}
