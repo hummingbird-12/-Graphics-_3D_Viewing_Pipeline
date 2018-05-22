@@ -114,17 +114,17 @@ void display_camera(int camera_id) {
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	if (ViewMode == EXTERIOR_MODE) { // MAIN_CAM, CCTV_1, CCTV_2, CCTV_3
+	if (ViewMode == EXTERIOR_MODE) { // MAIN_CAM, SIDE_CAM, FRONT_CAM, TOP_CAM
 		display_camera(MAIN_CAM);
-		display_camera(CCTV_1);
-		display_camera(CCTV_2);
-		display_camera(CCTV_3);
-	}
-	else { // INTERIOR_MODE : CCTV_DYN, SIDE_CAM, FRONT_CAM, TOP_CAM
-		display_camera(CCTV_DYN);
 		display_camera(SIDE_CAM);
 		display_camera(FRONT_CAM);
 		display_camera(TOP_CAM);
+	}
+	else { // INTERIOR_MODE : CCTV_DYN, CCTV_1, CCTV_2, CCTV_3
+		display_camera(CCTV_DYN);
+		display_camera(CCTV_1);
+		display_camera(CCTV_2);
+		display_camera(CCTV_3);
 	}
 	glutSwapBuffers();
 }
@@ -288,7 +288,7 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'W':
 		if (ViewMode == EXTERIOR_MODE) {
 			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) // translate frontwards
-				camera_translate(MAIN_CAM, 100.0f, -camera[MAIN_CAM].naxis);
+				camera_translate(MAIN_CAM, 130.0f, -camera[MAIN_CAM].naxis);
 			else if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate frontwards
 				camera_rotate(MAIN_CAM, 5.0f, camera[MAIN_CAM].uaxis);
 			else // translate upwards
@@ -320,7 +320,7 @@ void keyboard(unsigned char key, int x, int y) {
 	case 'S':
 		if (ViewMode == EXTERIOR_MODE) {
 			if (glutGetModifiers() == GLUT_ACTIVE_SHIFT) // translate backwards
-				camera_translate(MAIN_CAM, 100.0f, camera[MAIN_CAM].naxis);
+				camera_translate(MAIN_CAM, 130.0f, camera[MAIN_CAM].naxis);
 			else if (glutGetModifiers() == GLUT_ACTIVE_ALT) // rotate backwards
 				camera_rotate(MAIN_CAM, 5.0f, -camera[MAIN_CAM].uaxis);
 			else // translate downwards
@@ -381,30 +381,12 @@ void reshape(int width, int height) {
 	float aspect_ratio;
 	aspect_ratio = (float)width / height;
 
-	// EXTERIOR_MODE : MAIN_CAM, CCTV_1, CCTV_2, CCTV_3
+	// EXTERIOR_MODE : MAIN_CAM, SIDE_CAM, FRONT_CAM, TOP_CAM
 
-	viewport[MAIN_CAM].x = viewport[MAIN_CAM].y = 0;
-	viewport[MAIN_CAM].w = (int)(1.0f * width);
-	viewport[MAIN_CAM].h = (int)(0.7f * height);
-
-	viewport[CCTV_1].x = 0;
-	viewport[CCTV_1].y = height - 0.3f * height;
-	viewport[CCTV_1].w = viewport[CCTV_1].h = std::min((int)(0.3f * height), (int)(0.3f * width));
-
-	viewport[CCTV_2].x = width / 2 - std::min((int)(0.3f * height), (int)(0.3f * width)) / 2;
-	viewport[CCTV_2].y = height - 0.3f * height;
-	viewport[CCTV_2].w = viewport[CCTV_2].h = std::min((int)(0.3f * height), (int)(0.3f * width));
-
-	viewport[CCTV_3].x = width - std::min((int)(0.3f * height), (int)(0.3f * width));
-	viewport[CCTV_3].y = height - 0.3f * height;
-	viewport[CCTV_3].w = viewport[CCTV_3].h = std::min((int)(0.3f * height), (int)(0.3f * width));
-
-	// INTERIOR_MODE : CCTV_DYN, SIDE_CAM, FRONT_CAM, TOP_CAM
-
-	viewport[CCTV_DYN].x = width * 0.4f;
-	viewport[CCTV_DYN].y = 0.0f;
-	viewport[CCTV_DYN].w = width * 0.6f;
-	viewport[CCTV_DYN].h = height;
+	viewport[MAIN_CAM].x = width * 0.4f;
+	viewport[MAIN_CAM].y = 0.0f;
+	viewport[MAIN_CAM].w = width * 0.6f;
+	viewport[MAIN_CAM].h = height;
 
 	viewport[SIDE_CAM].x = 0.0f;
 	viewport[SIDE_CAM].y = height * 0.75f;
@@ -421,12 +403,43 @@ void reshape(int width, int height) {
 	viewport[TOP_CAM].w = width * 0.4f;
 	viewport[TOP_CAM].h = height * 0.5f;
 
+	// INTERIOR_MODE : CCTV_DYN, CCTV_1, CCTV_2, CCTV_3
+
+	viewport[CCTV_DYN].x = width * 0.4f;
+	viewport[CCTV_DYN].y = 0.0f;
+	viewport[CCTV_DYN].w = width * 0.6f;
+	viewport[CCTV_DYN].h = height;
+
+	viewport[CCTV_1].x = 0.0f;
+	viewport[CCTV_1].y = height * 0.67f;
+	viewport[CCTV_1].w = width * 0.35f;
+	viewport[CCTV_1].h = height * 0.28f;
+
+	viewport[CCTV_2].x = 0.0f;
+	viewport[CCTV_2].y = height * 0.36f;
+	viewport[CCTV_2].w = width * 0.35f;
+	viewport[CCTV_2].h = height * 0.28f;
+
+	viewport[CCTV_3].x = 0.0f;
+	viewport[CCTV_3].y = height * 0.05f;
+	viewport[CCTV_3].w = width * 0.35f;
+	viewport[CCTV_3].h = height * 0.28f;
+
 	for (int i = 0; i < NUMBER_OF_CAMERAS; i++) {
 		camera[i].aspect_ratio = (float)viewport[i].w / viewport[i].h;
-		//camera[MAIN_CAM].aspect_ratio = 1;
 		ProjectionMatrix[i] = glm::perspective(camera[i].fov_y*TO_RADIAN, camera[i].aspect_ratio, camera[i].near_clip, camera[i].far_clip);
 		ViewProjectionMatrix[i] = ProjectionMatrix[i] * ViewMatrix[i];
 	}
+
+	// orthographic projection for side, front, top view cameras
+	ProjectionMatrix[SIDE_CAM] = glm::ortho(-camera[SIDE_CAM].pos.y, camera[SIDE_CAM].pos.y, -camera[SIDE_CAM].pos.z - 10.0f, camera[SIDE_CAM].pos.z + 10.0f, camera[SIDE_CAM].near_clip, camera[SIDE_CAM].far_clip);
+	ViewProjectionMatrix[SIDE_CAM] = ProjectionMatrix[SIDE_CAM] * ViewMatrix[SIDE_CAM];
+
+	ProjectionMatrix[FRONT_CAM] = glm::ortho(-camera[FRONT_CAM].pos.x, camera[FRONT_CAM].pos.x, -camera[FRONT_CAM].pos.z - 10.0f, camera[FRONT_CAM].pos.z + 10.0f, camera[FRONT_CAM].near_clip, camera[FRONT_CAM].far_clip);
+	ViewProjectionMatrix[FRONT_CAM] = ProjectionMatrix[FRONT_CAM] * ViewMatrix[FRONT_CAM];
+
+	ProjectionMatrix[TOP_CAM] = glm::ortho(-camera[TOP_CAM].pos.x, camera[TOP_CAM].pos.x, -camera[TOP_CAM].pos.y, camera[TOP_CAM].pos.y, camera[TOP_CAM].near_clip, camera[TOP_CAM].far_clip);
+	ViewProjectionMatrix[TOP_CAM] = ProjectionMatrix[TOP_CAM] * ViewMatrix[TOP_CAM];
 
 	glutPostRedisplay();
 }
@@ -486,47 +499,47 @@ void initialize_camera(void) {
 	camera[MAIN_CAM].vaxis = glm::vec3(temp[0].y, temp[1].y, temp[2].y); // up
 	camera[MAIN_CAM].naxis = glm::vec3(temp[0].z, temp[1].z, temp[2].z); // back
 
-	camera[MAIN_CAM].fov_y = 15.0f;
+	camera[MAIN_CAM].fov_y = 30.0f;
 	camera[MAIN_CAM].near_clip = 1.0f;
 	camera[MAIN_CAM].far_clip = 10000.0f;
 
 	set_ViewMatrix(MAIN_CAM);
 
 	// FRONT CAMERA
-	camera[FRONT_CAM].pos = glm::vec3(120.0f, -400.0f, 25.0f);
+	camera[FRONT_CAM].pos = glm::vec3(120.0f, -50.0f, 25.0f);
 	camera[FRONT_CAM].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
 	camera[FRONT_CAM].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[FRONT_CAM].naxis = glm::vec3(0.0f, -1.0f, 0.0f);
 
 	camera[FRONT_CAM].fov_y = 15.0f;
 	camera[FRONT_CAM].near_clip = 1.0f;
-	camera[FRONT_CAM].far_clip = 10000.0f;
+	camera[FRONT_CAM].far_clip = 300.0f;
 
 	set_ViewMatrix(FRONT_CAM);
 
 	// SIDE CAMERA
 	//temp = glm::lookAt(glm::vec3(800.0f, 85.0f, 25.0f), glm::vec3(0.0f, 90.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	camera[SIDE_CAM].pos = glm::vec3(500.0f, 85.0f, 25.0f);
+	camera[SIDE_CAM].pos = glm::vec3(290.0f, 85.0f, 25.0f);
 	camera[SIDE_CAM].uaxis = glm::vec3(0.0f, 1.0f, 0.0f);
 	camera[SIDE_CAM].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[SIDE_CAM].naxis = glm::vec3(1.0f, 0.0f, 0.0f);
 
 	camera[SIDE_CAM].fov_y = 25.0f;
 	camera[SIDE_CAM].near_clip = 1.0f;
-	camera[SIDE_CAM].far_clip = 10000.0f;
+	camera[SIDE_CAM].far_clip = 300.0f;
 
 	set_ViewMatrix(SIDE_CAM);
 
 	// TOP CAMERA
 	//temp = glm::lookAt(glm::vec3(120.0f, 90.0f, 1000.0f), glm::vec3(120.0f, 90.0f, 0.0f), glm::vec3(-10.0f, 0.0f, 0.0f));
-	camera[TOP_CAM].pos = glm::vec3(120.0f, 90.0f, 900.0f);
+	camera[TOP_CAM].pos = glm::vec3(120.0f, 85.0f, 110.0f);
 	camera[TOP_CAM].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
 	camera[TOP_CAM].vaxis = glm::vec3(0.0f, 1.0f, 0.0f);
 	camera[TOP_CAM].naxis = glm::vec3(0.0f, 0.0f, 1.0f);
 
 	camera[TOP_CAM].fov_y = 15.0f;
 	camera[TOP_CAM].near_clip = 1.0f;
-	camera[TOP_CAM].far_clip = 10000.0f;
+	camera[TOP_CAM].far_clip = 300.0f;
 
 	set_ViewMatrix(TOP_CAM);
 
