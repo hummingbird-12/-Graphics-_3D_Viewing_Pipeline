@@ -415,6 +415,61 @@ void draw_animated_tiger(int camera_id) {
 	draw_axes(camera_id);
 }
 
+GLuint points_VBO, points_VAO;
+GLfloat point_vertices[][3] = { { 0.0f, 0.0f, 0.0f } };
+/*
+MAIN_CAM 0
+FRONT_CAM 1
+SIDE_CAM 2
+TOP_CAM 3
+CCTV_1 4
+CCTV_2 5
+CCTV_3 6
+CCTV_DYN 7
+*/
+float camera_color[NUMBER_OF_CAMERAS][3] = {
+	{ 23 / 255.0f, 222 / 255.0f, 217 / 255.0f }, // MAIN_CAM
+	{ 0, 0, 0}, // FRONT_CAM
+	{ 0, 0, 0 }, // SIDE_CAM
+	{ 0, 0, 0 }, // TOP_CAM
+	{ 100 / 255.0f, 10 / 255.0f, 200 / 255.0f }, // CCTV_1
+	{ 100 / 255.0f, 10 / 255.0f, 200 / 255.0f }, // CCTV_2
+	{ 100 / 255.0f, 10 / 255.0f, 200 / 255.0f }, // CCTV_3
+	{ 0, 1, 0 } // CCTV_DYN
+};
+
+void define_camera(void) {
+	// Initialize vertex buffer object.
+	glGenBuffers(1, &points_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, points_VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(point_vertices), &point_vertices[0][0], GL_STATIC_DRAW);
+
+	// Initialize vertex array object.
+	glGenVertexArrays(1, &points_VAO);
+	glBindVertexArray(points_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, points_VBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void draw_camera(int camera_id, int camera_to_draw) {
+	float* rgb = camera_color[camera_to_draw];
+
+	ModelViewMatrix[camera_id] = glm::translate(ViewMatrix[camera_id], camera[camera_to_draw].pos);
+	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+
+	glBindVertexArray(points_VAO);
+	glUniform3f(loc_primitive_color, rgb[0], rgb[1], rgb[2]);
+	glDrawArrays(GL_POINTS, 0, 1);
+	glBindVertexArray(0);
+}
+
 void cleanup_OpenGL_stuffs(void) {
 	for (int i = 0; i < n_static_objects; i++) {
 		glDeleteVertexArrays(1, &(static_objects[i].VAO));

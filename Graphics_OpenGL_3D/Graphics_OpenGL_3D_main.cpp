@@ -44,7 +44,7 @@ int ViewMode;
 #define INTERIOR_MODE 1
 
 typedef struct _CALLBACK_CONTEXT {
-	int left_button;
+	int left_button, right_button;
 	int prevX, prevY;
 } CALLBACK_CONTEXT;
 CALLBACK_CONTEXT CC;
@@ -84,6 +84,12 @@ void display_camera(int camera_id) {
 	glLineWidth(2.0f);
 	draw_axes(camera_id);
 	glLineWidth(1.0f);
+
+	for (int i = 0; i < NUMBER_OF_CAMERAS; i++) {
+		glPointSize(10.0f);
+		draw_camera(camera_id, i);
+		glPointSize(1.0f);
+	}
 
 	draw_static_object(&(static_objects[OBJ_BUILDING]), 0, camera_id);
 
@@ -156,7 +162,20 @@ void mouse(int button, int state, int x, int y) {
 			camera[MAIN_CAM].move_status = camera[CCTV_DYN].move_status = 0;
 		}
 		break;
-	case SCROLL_UP : // mouse wheel scroll up
+	case GLUT_RIGHT_BUTTON: // right click
+		if (state == GLUT_DOWN) { // button pressed
+			CC.right_button = GLUT_DOWN;
+			CC.prevX = x;
+			CC.prevY = y;
+
+			camera[target_cam].move_status = 1;
+		}
+		else if (state == GLUT_UP) { // button released
+			CC.right_button = GLUT_UP;
+			camera[MAIN_CAM].move_status = camera[CCTV_DYN].move_status = 0;
+		}
+		break;
+	case SCROLL_UP: // mouse wheel scroll up
 		if (camera[target_cam].fov_y - 1.0f > 5.0f) {
 			camera[target_cam].fov_y -= 1.0f;
 			ProjectionMatrix[target_cam] = glm::perspective(camera[target_cam].fov_y*TO_RADIAN, camera[target_cam].aspect_ratio, camera[target_cam].near_clip, camera[target_cam].far_clip);
@@ -164,7 +183,7 @@ void mouse(int button, int state, int x, int y) {
 			glutPostRedisplay();
 		}
 		break;
-	case SCROLL_DOWN : // mouse wheel scroll down
+	case SCROLL_DOWN: // mouse wheel scroll down
 		if (camera[target_cam].fov_y + 1.0f < 100.0f) {
 			camera[target_cam].fov_y += 1.0f;
 			ProjectionMatrix[target_cam] = glm::perspective(camera[target_cam].fov_y*TO_RADIAN, camera[target_cam].aspect_ratio, camera[target_cam].near_clip, camera[target_cam].far_clip);
@@ -186,11 +205,12 @@ void motion(int x, int y) {
 	CC.prevX = x;
 	CC.prevY = y;
 
-	switch (glutGetModifiers()) {
-	default:
+	if(CC.left_button == GLUT_DOWN) { // left click
 		camera_rotate(target_cam, dispX, -camera[target_cam].vaxis);
 		camera_rotate(target_cam, dispY, -camera[target_cam].uaxis);
-		break;
+	}
+	else { // right click
+		camera_rotate(target_cam, dispX, -camera[target_cam].naxis);
 	}
 
 	set_ViewMatrix(target_cam);
@@ -419,7 +439,7 @@ void timer_scene(int timestamp_scene) {
 }
 
 void register_callbacks(void) {
-	CC.left_button = GLUT_UP;
+	CC.left_button = CC.right_button = GLUT_UP;
 
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
@@ -491,7 +511,7 @@ void initialize_camera(void) {
 	camera[SIDE_CAM].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[SIDE_CAM].naxis = glm::vec3(1.0f, 0.0f, 0.0f);
 
-	camera[SIDE_CAM].fov_y = 15.0f;
+	camera[SIDE_CAM].fov_y = 25.0f;
 	camera[SIDE_CAM].near_clip = 1.0f;
 	camera[SIDE_CAM].far_clip = 10000.0f;
 
@@ -578,6 +598,7 @@ void prepare_scene(void) {
 	define_axes();
 	define_static_objects();
 	define_animated_tiger();
+	define_camera();
 }
 
 void initialize_renderer(void) {
