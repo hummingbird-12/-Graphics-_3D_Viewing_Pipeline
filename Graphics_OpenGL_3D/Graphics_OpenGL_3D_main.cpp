@@ -137,22 +137,41 @@ void camera_rotate(int camera_id, float angle, glm::vec3 axis) {
 	camera[camera_id].naxis = rotation * camera[camera_id].naxis;
 }
 
-void mousepress(int button, int state, int x, int y) {
-	if (button == GLUT_LEFT_BUTTON) {
-		if (state == GLUT_DOWN) {
+#define SCROLL_UP 3
+#define SCROLL_DOWN 4
+void mouse(int button, int state, int x, int y) {
+	int target_cam = (ViewMode == EXTERIOR_MODE ? MAIN_CAM : CCTV_DYN);
+
+	switch (button) {
+	case GLUT_LEFT_BUTTON: // left click
+		if (state == GLUT_DOWN) { // button pressed
 			CC.left_button = GLUT_DOWN;
 			CC.prevX = x;
 			CC.prevY = y;
 
-			if (ViewMode == EXTERIOR_MODE)
-				camera[MAIN_CAM].move_status = 1;
-			else // INTERIOR_MODE
-				camera[CCTV_DYN].move_status = 1;
+			camera[target_cam].move_status = 1;
 		}
-		else if (state == GLUT_UP) {
+		else if (state == GLUT_UP) { // button released
 			CC.left_button = GLUT_UP;
 			camera[MAIN_CAM].move_status = camera[CCTV_DYN].move_status = 0;
 		}
+		break;
+	case SCROLL_UP : // mouse wheel scroll up
+		if (camera[target_cam].fov_y - 1.0f > 5.0f) {
+			camera[target_cam].fov_y -= 1.0f;
+			ProjectionMatrix[target_cam] = glm::perspective(camera[target_cam].fov_y*TO_RADIAN, camera[target_cam].aspect_ratio, camera[target_cam].near_clip, camera[target_cam].far_clip);
+			ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
+			glutPostRedisplay();
+		}
+		break;
+	case SCROLL_DOWN : // mouse wheel scroll down
+		if (camera[target_cam].fov_y + 1.0f < 100.0f) {
+			camera[target_cam].fov_y += 1.0f;
+			ProjectionMatrix[target_cam] = glm::perspective(camera[target_cam].fov_y*TO_RADIAN, camera[target_cam].aspect_ratio, camera[target_cam].near_clip, camera[target_cam].far_clip);
+			ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
+			glutPostRedisplay();
+		}
+		break;
 	}
 }
 
@@ -404,7 +423,7 @@ void register_callbacks(void) {
 
 	glutDisplayFunc(display);
 	glutKeyboardFunc(keyboard);
-	glutMouseFunc(mousepress);
+	glutMouseFunc(mouse);
 	glutMotionFunc(motion);
 	glutReshapeFunc(reshape);
 	glutTimerFunc(100, timer_scene, 0);
@@ -492,12 +511,12 @@ void initialize_camera(void) {
 	set_ViewMatrix(TOP_CAM);
 
 	// CCTV 1
-	camera[CCTV_1].pos = glm::vec3(225.0f, 105.0f, 25.0f);
+	camera[CCTV_1].pos = glm::vec3(224.0f, 105.0f, 25.0f);
 	camera[CCTV_1].uaxis = glm::vec3(1.0f, 1.0f, 0.0f);
 	camera[CCTV_1].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[CCTV_1].naxis = glm::vec3(1.0f, -1.0f, 0.0f);
 
-	camera[CCTV_1].fov_y = 30.0f;
+	camera[CCTV_1].fov_y = 60.0f;
 	camera[CCTV_1].near_clip = 0.01f;
 	camera[CCTV_1].far_clip = 500.0f;
 
@@ -509,7 +528,7 @@ void initialize_camera(void) {
 	camera[CCTV_2].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[CCTV_2].naxis = glm::vec3(-1.0f, 0.0f, 0.0f);
 
-	camera[CCTV_2].fov_y = 30.0f;
+	camera[CCTV_2].fov_y = 60.0f;
 	camera[CCTV_2].near_clip = 0.01f;
 	camera[CCTV_2].far_clip = 500.0f;
 
@@ -521,17 +540,17 @@ void initialize_camera(void) {
 	camera[CCTV_3].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[CCTV_3].naxis = glm::vec3(0.0f, -1.0f, 0.0f);
 
-	camera[CCTV_3].fov_y = 30.0f;
+	camera[CCTV_3].fov_y = 60.0f;
 	camera[CCTV_3].near_clip = 0.01f;
 	camera[CCTV_3].far_clip = 500.0f;
 
 	set_ViewMatrix(CCTV_3);
 
 	// DYNAMIC CCTV
-	camera[CCTV_DYN].pos = glm::vec3(35.0f, 135.0f, 25.0f);
-	camera[CCTV_DYN].uaxis = glm::vec3(-1.0f, 0.0f, 0.0f);
+	camera[CCTV_DYN].pos = glm::vec3(210.0f, 41.0f, 25.0f);
+	camera[CCTV_DYN].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
 	camera[CCTV_DYN].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
-	camera[CCTV_DYN].naxis = glm::vec3(0.0f, 1.0f, 0.0f);
+	camera[CCTV_DYN].naxis = glm::vec3(0.0f, -1.0f, 0.0f);
 
 	camera[CCTV_DYN].fov_y = 60.0f;
 	camera[CCTV_DYN].near_clip = 0.01f;
