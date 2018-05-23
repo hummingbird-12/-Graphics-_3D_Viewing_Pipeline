@@ -379,25 +379,72 @@ struct {
 } tiger_data;
 
 void define_animated_tiger(void) {
-	TIGER_PATH_POINT pnt;
+	TIGER_PATH_POINT pnt; 
 
 	pnt.trigger = X;
 	pnt.direction = COUNTERCLOCKWISE;
-	pnt.centerX = 70.0f;
-	pnt.centerY = 90.0f;
+	pnt.center = glm::vec3(70.0f, 90.0f, 0.0f);
 	pnt.radius = 10.0f;
 	pnt.angle = 90.0f;
 	tiger_path_queue.push(pnt);
 
 	pnt.trigger = Y;
 	pnt.direction = CLOCKWISE;
-	pnt.centerX = 90.0f;
-	pnt.centerY = 90.0f;
+	pnt.center = glm::vec3(90.0f, 90.0f, 0.0f);
 	pnt.radius = 10.0f;
 	pnt.angle = 90.0f;
 	tiger_path_queue.push(pnt);
 
-	tiger_inRotation = 0;
+	pnt.trigger = X;
+	pnt.direction = CLOCKWISE;
+	pnt.center = glm::vec3(195.0f, 90.0f, 0.0f);
+	pnt.radius = 10.0f;
+	pnt.angle = 90.0f;
+	tiger_path_queue.push(pnt);
+
+	pnt.trigger = Y;
+	pnt.direction = CLOCKWISE;
+	pnt.center = glm::vec3(195.0f, 60.0f, 0.0f);
+	pnt.radius = 10.0f;
+	pnt.angle = 270.0f;
+	tiger_path_queue.push(pnt);
+	
+	pnt.trigger = X;
+	pnt.direction = COUNTERCLOCKWISE;
+	pnt.center = glm::vec3(195.0f, 85.0f, 0.0f);
+	pnt.radius = 10.0f;
+	pnt.angle = 180.0f;
+	tiger_path_queue.push(pnt);
+
+	pnt.trigger = X;
+	pnt.direction = COUNTERCLOCKWISE;
+	pnt.center = glm::vec3(90.0f, 90.0f, 0.0f);
+	pnt.radius = 10.0f;
+	pnt.angle = 90.0f;
+	tiger_path_queue.push(pnt);
+
+	pnt.trigger = Y;
+	pnt.direction = CLOCKWISE;
+	pnt.center = glm::vec3(70.0f, 90.0f, 0.0f);
+	pnt.radius = 10.0f;
+	pnt.angle = 90.0f;
+	tiger_path_queue.push(pnt);
+
+	pnt.trigger = X;
+	pnt.direction = CLOCKWISE;
+	pnt.center = glm::vec3(40.0f, 90.0f, 0.0f);
+	pnt.radius = 10.0f;
+	pnt.angle = 270.0f;
+	tiger_path_queue.push(pnt);
+
+	pnt.trigger = Y;
+	pnt.direction = COUNTERCLOCKWISE;
+	pnt.center = glm::vec3(60.0f, 90.0f, 0.0f);
+	pnt.radius = 10.0f;
+	pnt.angle = 90.0f;
+	tiger_path_queue.push(pnt);
+
+	tiger_inRotation = -1;
 	tiger_data.pos = glm::vec3(40, 80, 0);
 	tiger_data.headTo = glm::vec3(1.0f, 0.0f, 0.0f);
 
@@ -421,34 +468,36 @@ void define_animated_tiger(void) {
 }
 
 void draw_animated_tiger(int camera_id) {
-	glm::mat4 ModelMatrix;
 	glm::vec3 orgHeadTo = glm::vec3(0.0f, -1.0f, 0.0f);
 	TIGER_PATH_POINT pnt;
 
-	/*
-	if (tiger_inRotation) {
+	if (tiger_inRotation >= 0.0f) {
 		pnt = tiger_path_queue.front();
-		tiger_inRotation -= 5.0f;
-
+		
+		TigerModellingMatrix = glm::translate(glm::mat4(1.0f), pnt.center);
 		if (pnt.direction == COUNTERCLOCKWISE) {
-			ModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(pnt.centerX, pnt.centerY, 0.0f));
-			ModelMatrix = glm::rotate(ModelMatrix, 5.0f * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
-			ModelMatrix = glm::translate(ModelMatrix, tiger_data.pos - glm::vec3(pnt.centerX, pnt.centerY, 0.0f));
+			TigerModellingMatrix = glm::rotate(TigerModellingMatrix, (pnt.angle - tiger_inRotation) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 		}
 		else {
-
+			TigerModellingMatrix = glm::rotate(TigerModellingMatrix, -(pnt.angle - tiger_inRotation) * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
 		}
-		ModelMatrix = glm::rotate(ModelMatrix, acos((glm::dot(orgHeadTo, tiger_data.headTo) / (glm::length(orgHeadTo) * glm::length(tiger_data.headTo)))), glm::vec3(0.0f, 0.0f, 1.0f));
-		ModelMatrix *= tiger[tiger_data.cur_frame].ModelMatrix[0];
-		ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix;
+		TigerModellingMatrix = glm::translate(TigerModellingMatrix, tiger_data.pos - pnt.center);
+		if(tiger_data.headTo.x >= 0.0f)
+			TigerModellingMatrix = glm::rotate(TigerModellingMatrix, acos((glm::dot(orgHeadTo, tiger_data.headTo) / (glm::length(orgHeadTo) * glm::length(tiger_data.headTo)))), glm::vec3(0.0f, 0.0f, 1.0f));
+		else
+			TigerModellingMatrix = glm::rotate(TigerModellingMatrix, -acos((glm::dot(orgHeadTo, tiger_data.headTo) / (glm::length(orgHeadTo) * glm::length(tiger_data.headTo)))), glm::vec3(0.0f, 0.0f, 1.0f));
+		TigerModellingMatrix *= tiger[tiger_data.cur_frame].ModelMatrix[0];
 
-		tiger_path_queue.pop();
+		ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * TigerModellingMatrix;
 	}
-	*/
-
-	ModelViewMatrix[camera_id] = glm::translate(ViewMatrix[camera_id], tiger_data.pos);
-	ModelViewMatrix[camera_id] = glm::rotate(ModelViewMatrix[camera_id], acos((glm::dot(orgHeadTo, tiger_data.headTo) / (glm::length(orgHeadTo) * glm::length(tiger_data.headTo)))), glm::vec3(0.0f, 0.0f, 1.0f));
-	ModelViewMatrix[camera_id] *= tiger[tiger_data.cur_frame].ModelMatrix[0];
+	else {
+		ModelViewMatrix[camera_id] = glm::translate(ViewMatrix[camera_id], tiger_data.pos);
+		if (tiger_data.headTo.x >= 0.0f)
+			ModelViewMatrix[camera_id] = glm::rotate(ModelViewMatrix[camera_id], acos((glm::dot(orgHeadTo, tiger_data.headTo) / (glm::length(orgHeadTo) * glm::length(tiger_data.headTo)))), glm::vec3(0.0f, 0.0f, 1.0f));
+		else
+			ModelViewMatrix[camera_id] = glm::rotate(ModelViewMatrix[camera_id], -acos((glm::dot(orgHeadTo, tiger_data.headTo) / (glm::length(orgHeadTo) * glm::length(tiger_data.headTo)))), glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelViewMatrix[camera_id] *= tiger[tiger_data.cur_frame].ModelMatrix[0];
+	}
 
 	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);

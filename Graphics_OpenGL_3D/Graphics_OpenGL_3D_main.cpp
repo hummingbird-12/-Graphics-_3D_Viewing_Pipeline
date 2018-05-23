@@ -55,10 +55,12 @@ typedef enum { CLOCKWISE, COUNTERCLOCKWISE } DIRECTION;
 typedef struct _TIGER_PATH_POINT {
 	TRIGGER trigger;
 	DIRECTION direction;
-	float centerX, centerY, radius;
+	glm::vec3 center;
+	float radius;
 	float angle;
 } TIGER_PATH_POINT;
 
+glm::mat4 TigerModellingMatrix;
 int tiger_inRotation;
 std::queue < TIGER_PATH_POINT > tiger_path_queue;
 
@@ -510,8 +512,50 @@ void reshape(int width, int height) {
 
 void timer_scene(int timestamp_scene) {
 	glm::vec3 prevPos = tiger_data.pos;
+	glm::vec4 afterRotation;
 	TIGER_PATH_POINT pnt;
 
+	if (!tiger_path_queue.empty())
+		pnt = tiger_path_queue.front();
+
+	if (tiger_inRotation < 0.0f) { // not in rotation
+		tiger_data.pos += tiger_data.headTo;
+		tiger_data.headTo = tiger_data.pos - prevPos;
+	}
+	else { // in rotation
+		tiger_inRotation -= 5.0f;
+		if (tiger_inRotation < 0.0f) { // end of rotation
+			afterRotation = TigerModellingMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+			if (pnt.angle == 90.0f) {
+				tiger_data.headTo = glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), tiger_data.headTo);
+				tiger_data.headTo *= (pnt.direction == COUNTERCLOCKWISE ? 1 : -1);
+			}
+			else if (pnt.angle == 180.0f)
+				tiger_data.headTo *= -1;
+			else if (pnt.angle == 270.0f) {
+				tiger_data.headTo = glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), tiger_data.headTo);
+				tiger_data.headTo *= (pnt.direction == CLOCKWISE ? 1 : -1);
+			}
+
+			tiger_data.pos.x = afterRotation.x;
+			tiger_data.pos.y = afterRotation.y;
+
+			tiger_path_queue.push(pnt);
+			tiger_path_queue.pop();
+			if (!tiger_path_queue.empty())
+				pnt = tiger_path_queue.front();
+		}
+	}
+
+	if (!tiger_path_queue.empty() && tiger_inRotation < 0.0f) {
+		if (pnt.trigger == X && tiger_data.pos.x == pnt.center.x)
+			tiger_inRotation = pnt.angle;
+		else if (pnt.trigger == Y && tiger_data.pos.y == pnt.center.y)
+			tiger_inRotation = pnt.angle;
+	}
+
+	/*
 	if (!tiger_path_queue.empty())
 		pnt = tiger_path_queue.front();
 
@@ -519,11 +563,11 @@ void timer_scene(int timestamp_scene) {
 		tiger_inRotation--;
 		if (pnt.direction == COUNTERCLOCKWISE) {
 			tiger_data.pos.x += 0.5;
-			tiger_data.pos.y = -(glm::sqrt(pnt.radius * pnt.radius - glm::pow(tiger_data.pos.x - pnt.centerX, 2))) + pnt.centerY;
+			tiger_data.pos.y = -(glm::sqrt(pnt.radius * pnt.radius - glm::pow(tiger_data.pos.x - pnt.center.x, 2))) + pnt.center.y;
 		}
 		else {
 			tiger_data.pos.y += 0.5;
-			tiger_data.pos.x = -(glm::sqrt(pnt.radius * pnt.radius - glm::pow(tiger_data.pos.y - pnt.centerY, 2))) + pnt.centerX;
+			tiger_data.pos.x = -(glm::sqrt(pnt.radius * pnt.radius - glm::pow(tiger_data.pos.y - pnt.center.y, 2))) + pnt.center.x;
 		}
 		if (!tiger_inRotation) {
 			tiger_path_queue.pop();
@@ -536,16 +580,17 @@ void timer_scene(int timestamp_scene) {
 	}
 
 	if (!tiger_path_queue.empty()) {
-		if (pnt.trigger == X && tiger_data.pos.x == pnt.centerX)
+		if (pnt.trigger == X && tiger_data.pos.x == pnt.center.x)
 			tiger_inRotation = (int)(pnt.radius * (pnt.angle / 90.0f)) * 2;
-		else if (pnt.trigger == Y && tiger_data.pos.y == pnt.centerY)
+		else if (pnt.trigger == Y && tiger_data.pos.y == pnt.center.y)
 			tiger_inRotation = (int)(pnt.radius * (pnt.angle / 90.0f)) * 2;
 	}
 
 	tiger_data.headTo = tiger_data.pos - prevPos;
+	*/
 
 	tiger_data.cur_frame = timestamp_scene % N_TIGER_FRAMES;
-	tiger_data.rotation_angle = (timestamp_scene % 360)*TO_RADIAN;
+	//tiger_data.rotation_angle = (timestamp_scene % 360)*TO_RADIAN;
 	glutPostRedisplay();
 	glutTimerFunc(100, timer_scene, (timestamp_scene + 1) % INT_MAX);
 }
