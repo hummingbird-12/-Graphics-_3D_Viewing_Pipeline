@@ -570,7 +570,7 @@ void draw_camera(int camera_id, int camera_to_draw) {
 }
 
 GLuint line_VBO, line_VAO;
-GLfloat line_vertices[][3] = { { 0.0f, 0.0f, 0.0f }, { 230.0f, 0.0f, 0.0f } };
+GLfloat line_vertices[][3] = { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } };
 
 void define_line(void) {
 	// Initialize vertex buffer object.
@@ -613,7 +613,7 @@ void draw_line(int camera_id, float x1, float y1, float z1, float x2, float y2, 
 	ModelViewMatrix[camera_id] = glm::translate(ViewMatrix[camera_id], glm::vec3(x1, y1, z1));
 	ModelViewMatrix[camera_id] = glm::rotate(ModelViewMatrix[camera_id], xyAng, glm::cross(glm::vec3(x2 - x1, y2 - y1, z2 - z1), glm::vec3(0.0f, 0.0f, 1.0f)));
 	ModelViewMatrix[camera_id] = glm::rotate(ModelViewMatrix[camera_id], zAng, glm::vec3(0.0f, 0.0f, 1.0f));
-	ModelViewMatrix[camera_id] = glm::scale(ModelViewMatrix[camera_id], glm::vec3(length / 230.0f, 1.0f, 1.0f));
+	ModelViewMatrix[camera_id] = glm::scale(ModelViewMatrix[camera_id], glm::vec3(length, 1.0f, 1.0f));
 	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 
