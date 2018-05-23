@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
+#include <queue>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
@@ -48,6 +49,18 @@ typedef struct _CALLBACK_CONTEXT {
 	int prevX, prevY;
 } CALLBACK_CONTEXT;
 CALLBACK_CONTEXT CC;
+
+typedef enum { X, Y } TRIGGER;
+typedef enum { CLOCKWISE, COUNTERCLOCKWISE } DIRECTION;
+typedef struct _TIGER_PATH_POINT {
+	TRIGGER trigger;
+	DIRECTION direction;
+	float centerX, centerY, radius;
+	float angle;
+} TIGER_PATH_POINT;
+
+int tiger_inRotation;
+std::queue < TIGER_PATH_POINT > tiger_path_queue;
 
 //glm::mat4 ModelViewMatrix, ViewMatrix, ProjectionMatrix;
 glm::mat4 ViewMatrix[NUMBER_OF_CAMERAS];
@@ -496,6 +509,41 @@ void reshape(int width, int height) {
 }
 
 void timer_scene(int timestamp_scene) {
+	glm::vec3 prevPos = tiger_data.pos;
+	TIGER_PATH_POINT pnt;
+
+	if (!tiger_path_queue.empty())
+		pnt = tiger_path_queue.front();
+
+	if (tiger_inRotation) { // tiger is rotating
+		tiger_inRotation--;
+		if (pnt.direction == COUNTERCLOCKWISE) {
+			tiger_data.pos.x += 0.5;
+			tiger_data.pos.y = -(glm::sqrt(pnt.radius * pnt.radius - glm::pow(tiger_data.pos.x - pnt.centerX, 2))) + pnt.centerY;
+		}
+		else {
+			tiger_data.pos.y += 0.5;
+			tiger_data.pos.x = -(glm::sqrt(pnt.radius * pnt.radius - glm::pow(tiger_data.pos.y - pnt.centerY, 2))) + pnt.centerX;
+		}
+		if (!tiger_inRotation) {
+			tiger_path_queue.pop();
+			if (!tiger_path_queue.empty())
+				pnt = tiger_path_queue.front();
+		}
+	}
+	else { // tiger moves +X direction
+		tiger_data.pos.x += 1;
+	}
+
+	if (!tiger_path_queue.empty()) {
+		if (pnt.trigger == X && tiger_data.pos.x == pnt.centerX)
+			tiger_inRotation = (int)(pnt.radius * (pnt.angle / 90.0f)) * 2;
+		else if (pnt.trigger == Y && tiger_data.pos.y == pnt.centerY)
+			tiger_inRotation = (int)(pnt.radius * (pnt.angle / 90.0f)) * 2;
+	}
+
+	tiger_data.headTo = tiger_data.pos - prevPos;
+
 	tiger_data.cur_frame = timestamp_scene % N_TIGER_FRAMES;
 	tiger_data.rotation_angle = (timestamp_scene % 360)*TO_RADIAN;
 	glutPostRedisplay();
