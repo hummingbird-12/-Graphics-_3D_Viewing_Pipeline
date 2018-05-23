@@ -169,10 +169,23 @@ void display_camera(int camera_id) {
 	draw_static_object(&(static_objects[OBJ_LIGHT]), 4, camera_id);
 
 	draw_static_object(&(static_objects[OBJ_TEAPOT]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_TEAPOT]), 1, camera_id);
+	draw_static_object(&(static_objects[OBJ_TEAPOT]), 2, camera_id);
+
 	draw_static_object(&(static_objects[OBJ_NEW_CHAIR]), 0, camera_id);
 	draw_static_object(&(static_objects[OBJ_FRAME]), 0, camera_id);
 	draw_static_object(&(static_objects[OBJ_NEW_PICTURE]), 0, camera_id);
 	draw_static_object(&(static_objects[OBJ_COW]), 0, camera_id);
+
+	draw_static_object(&(static_objects[OBJ_IRONMAN]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_IRONMAN]), 1, camera_id);
+
+	draw_static_object(&(static_objects[OBJ_TANK]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_TANK]), 1, camera_id);
+
+	draw_static_object(&(static_objects[OBJ_GODZILLA]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_BUS]), 0, camera_id);
+	draw_static_object(&(static_objects[OBJ_BIKE]), 0, camera_id);
 
 	draw_animated_tiger(camera_id);
 }

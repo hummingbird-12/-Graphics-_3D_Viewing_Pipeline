@@ -27,7 +27,7 @@ typedef struct _Object {
 	Material material[N_MAX_GEOM_COPIES];
 } Object;
 
-#define N_MAX_STATIC_OBJECTS		10
+#define N_MAX_STATIC_OBJECTS		13
 Object static_objects[N_MAX_STATIC_OBJECTS]; // allocage memory dynamically every time it is needed rather than using a static array
 int n_static_objects = 0;
 
@@ -39,6 +39,11 @@ int n_static_objects = 0;
 #define OBJ_FRAME			5
 #define OBJ_NEW_PICTURE		6
 #define OBJ_COW				7
+#define OBJ_IRONMAN			8
+#define OBJ_TANK			9
+#define OBJ_GODZILLA		10
+#define OBJ_BUS				11
+#define OBJ_BIKE			12
 
 int read_geometry(GLfloat **object, int bytes_per_primitive, char *filename) {
 	int n_triangles;
@@ -210,7 +215,7 @@ void define_static_objects(void) {
 	static_objects[OBJ_TEAPOT].front_face_mode = GL_CCW;
 	prepare_geom_of_static_object(&(static_objects[OBJ_TEAPOT]));
 
-	static_objects[OBJ_TEAPOT].n_geom_instances = 1;
+	static_objects[OBJ_TEAPOT].n_geom_instances = 3;
 
 	static_objects[OBJ_TEAPOT].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(193.0f, 120.0f, 11.0f));
 	static_objects[OBJ_TEAPOT].ModelMatrix[0] = glm::scale(static_objects[OBJ_TEAPOT].ModelMatrix[0],
@@ -222,6 +227,26 @@ void define_static_objects(void) {
 	static_objects[OBJ_TEAPOT].material[0].specular = glm::vec4(0.727811f, 0.626959f, 0.626959f, 1.0f);
 	static_objects[OBJ_TEAPOT].material[0].exponent = 128.0f*0.6;
 
+	static_objects[OBJ_TEAPOT].ModelMatrix[1] = glm::translate(glm::mat4(1.0f), glm::vec3(35.0f, 40.0f, 0.0f));
+	static_objects[OBJ_TEAPOT].ModelMatrix[1] = glm::scale(static_objects[OBJ_TEAPOT].ModelMatrix[1],
+		glm::vec3(2.2f, 2.5f, 2.0f));
+
+	static_objects[OBJ_TEAPOT].material[1].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_TEAPOT].material[1].ambient = glm::vec4(0.1745f, 0.01175f, 0.01175f, 1.0f);
+	static_objects[OBJ_TEAPOT].material[1].diffuse = glm::vec4(0.04136f, 0.61424f, 0.04136f, 1.0f);
+	static_objects[OBJ_TEAPOT].material[1].specular = glm::vec4(0.727811f, 0.626959f, 0.626959f, 1.0f);
+	static_objects[OBJ_TEAPOT].material[1].exponent = 128.0f*0.6;
+
+	static_objects[OBJ_TEAPOT].ModelMatrix[2] = glm::translate(glm::mat4(1.0f), glm::vec3(40.0f, 30.0f, 0.0f));
+	static_objects[OBJ_TEAPOT].ModelMatrix[2] = glm::scale(static_objects[OBJ_TEAPOT].ModelMatrix[2],
+		glm::vec3(2.0f, 2.0f, 2.0f));
+
+	static_objects[OBJ_TEAPOT].material[2].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_TEAPOT].material[2].ambient = glm::vec4(0.1745f, 0.01175f, 0.01175f, 1.0f);
+	static_objects[OBJ_TEAPOT].material[2].diffuse = glm::vec4(0.04136f, 0.04136f, 0.61424f, 1.0f);
+	static_objects[OBJ_TEAPOT].material[2].specular = glm::vec4(0.727811f, 0.626959f, 0.626959f, 1.0f);
+	static_objects[OBJ_TEAPOT].material[2].exponent = 128.0f*0.6;
+
 	// new_chair
 	strcpy(static_objects[OBJ_NEW_CHAIR].filename, "Data/new_chair_vnt.geom");
 	static_objects[OBJ_NEW_CHAIR].n_fields = 8;
@@ -231,7 +256,7 @@ void define_static_objects(void) {
 
 	static_objects[OBJ_NEW_CHAIR].n_geom_instances = 1;
 
-	static_objects[OBJ_NEW_CHAIR].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(200.0f, 104.0f, 0.0f));
+	static_objects[OBJ_NEW_CHAIR].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(210.0f, 120.0f, 0.0f));
 	static_objects[OBJ_NEW_CHAIR].ModelMatrix[0] = glm::scale(static_objects[OBJ_NEW_CHAIR].ModelMatrix[0],
 		glm::vec3(0.8f, 0.8f, 0.8f));
 	static_objects[OBJ_NEW_CHAIR].ModelMatrix[0] = glm::rotate(static_objects[OBJ_NEW_CHAIR].ModelMatrix[0],
@@ -295,7 +320,7 @@ void define_static_objects(void) {
 
 	static_objects[OBJ_COW].n_geom_instances = 1;
 
-	static_objects[OBJ_COW].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(215.0f, 100.0f, 9.5f));
+	static_objects[OBJ_COW].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(145.0f, 33.0f, 9.5f));
 	static_objects[OBJ_COW].ModelMatrix[0] = glm::scale(static_objects[OBJ_COW].ModelMatrix[0],
 		glm::vec3(30.0f, 30.0f, 30.0f));
 	static_objects[OBJ_COW].ModelMatrix[0] = glm::rotate(static_objects[OBJ_COW].ModelMatrix[0],
@@ -309,7 +334,131 @@ void define_static_objects(void) {
 	static_objects[OBJ_COW].material[0].specular = glm::vec4(0.992157f, 0.941176f, 0.807843f, 1.0f);
 	static_objects[OBJ_COW].material[0].exponent = 0.21794872f*0.6f;
 
-	n_static_objects = 8;
+	// IRONMAN
+	strcpy(static_objects[OBJ_IRONMAN].filename, "Data/IronMan.geom");
+	static_objects[OBJ_IRONMAN].n_fields = 8;
+
+	static_objects[OBJ_IRONMAN].front_face_mode = GL_CCW;
+	prepare_geom_of_static_object(&(static_objects[OBJ_IRONMAN]));
+
+	static_objects[OBJ_IRONMAN].n_geom_instances = 2;
+
+	static_objects[OBJ_IRONMAN].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(90.0f, 115.0f, 0.0f));
+	static_objects[OBJ_IRONMAN].ModelMatrix[0] = glm::rotate(static_objects[OBJ_IRONMAN].ModelMatrix[0], -90.0f * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	static_objects[OBJ_IRONMAN].ModelMatrix[0] = glm::rotate(static_objects[OBJ_IRONMAN].ModelMatrix[0], 90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	static_objects[OBJ_IRONMAN].ModelMatrix[0] = glm::rotate(static_objects[OBJ_IRONMAN].ModelMatrix[0], 90.0f * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	static_objects[OBJ_IRONMAN].ModelMatrix[0] = glm::scale(static_objects[OBJ_IRONMAN].ModelMatrix[0], glm::vec3(8.0f, 8.0f, 8.0f));
+
+	static_objects[OBJ_IRONMAN].material[0].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_IRONMAN].material[0].ambient = glm::vec4(0.19125f, 0.0735f, 0.0225f, 1.0f);
+	static_objects[OBJ_IRONMAN].material[0].diffuse = glm::vec4(238.0f / 255.0f, 50.0f / 255.0f, 4.0f / 255.0f, 1.0f);
+	static_objects[OBJ_IRONMAN].material[0].specular = glm::vec4(0.256777f, 0.137622f, 0.086014f, 1.0f);
+	static_objects[OBJ_IRONMAN].material[0].exponent = 128.0f*0.1f;
+
+	static_objects[OBJ_IRONMAN].ModelMatrix[1] = glm::translate(glm::mat4(1.0f), glm::vec3(120.0f, 115.0f, 0.0f));
+	static_objects[OBJ_IRONMAN].ModelMatrix[1] = glm::rotate(static_objects[OBJ_IRONMAN].ModelMatrix[1], -90.0f * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	static_objects[OBJ_IRONMAN].ModelMatrix[1] = glm::rotate(static_objects[OBJ_IRONMAN].ModelMatrix[1], 90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	static_objects[OBJ_IRONMAN].ModelMatrix[1] = glm::rotate(static_objects[OBJ_IRONMAN].ModelMatrix[1], 90.0f * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+	static_objects[OBJ_IRONMAN].ModelMatrix[1] = glm::scale(static_objects[OBJ_IRONMAN].ModelMatrix[1], glm::vec3(8.0f, 8.0f, 8.0f));
+
+	static_objects[OBJ_IRONMAN].material[1].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_IRONMAN].material[1].ambient = glm::vec4(0.19125f, 0.0735f, 0.0225f, 1.0f);
+	static_objects[OBJ_IRONMAN].material[1].diffuse = glm::vec4(238.0f / 255.0f, 50.0f / 255.0f, 4.0f / 255.0f, 1.0f);
+	static_objects[OBJ_IRONMAN].material[1].specular = glm::vec4(0.256777f, 0.137622f, 0.086014f, 1.0f);
+	static_objects[OBJ_IRONMAN].material[1].exponent = 128.0f*0.1f;
+
+	// TANK
+	strcpy(static_objects[OBJ_TANK].filename, "Data/Tank.geom");
+	static_objects[OBJ_TANK].n_fields = 8;
+
+	static_objects[OBJ_TANK].front_face_mode = GL_CCW;
+	prepare_geom_of_static_object(&(static_objects[OBJ_TANK]));
+
+	static_objects[OBJ_TANK].n_geom_instances = 2;
+
+	static_objects[OBJ_TANK].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(90.0f, 140.0f, 0.0f));
+	static_objects[OBJ_TANK].ModelMatrix[0] = glm::rotate(static_objects[OBJ_TANK].ModelMatrix[0], 90.0f * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	static_objects[OBJ_TANK].ModelMatrix[0] = glm::scale(static_objects[OBJ_TANK].ModelMatrix[0], glm::vec3(4.0f, 4.0f, 4.0f));
+	static_objects[OBJ_TANK].ModelMatrix[0] = glm::translate(static_objects[OBJ_TANK].ModelMatrix[0], glm::vec3(0.0f, -15.0f, 0.0f));
+
+	static_objects[OBJ_TANK].material[0].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_TANK].material[0].ambient = glm::vec4(0.19125f, 0.0735f, 0.0225f, 1.0f);
+	static_objects[OBJ_TANK].material[0].diffuse = glm::vec4(178 / 255.0f, 94 / 255.0f, 218 / 255.0f, 0.63f / 255.0f);
+	static_objects[OBJ_TANK].material[0].specular = glm::vec4(0.256777f, 0.137622f, 0.086014f, 1.0f);
+	static_objects[OBJ_TANK].material[0].exponent = 128.0f*0.1f;
+
+	static_objects[OBJ_TANK].ModelMatrix[1] = glm::translate(glm::mat4(1.0f), glm::vec3(150.0f, 148.0f, 0.0f));
+	static_objects[OBJ_TANK].ModelMatrix[1] = glm::rotate(static_objects[OBJ_TANK].ModelMatrix[1], -90.0f * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	static_objects[OBJ_TANK].ModelMatrix[1] = glm::scale(static_objects[OBJ_TANK].ModelMatrix[1], glm::vec3(4.0f, 4.0f, 4.0f));
+	static_objects[OBJ_TANK].ModelMatrix[1] = glm::translate(static_objects[OBJ_TANK].ModelMatrix[1], glm::vec3(0.0f, -15.0f, 0.0f));
+
+	static_objects[OBJ_TANK].material[1].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_TANK].material[1].ambient = glm::vec4(0.19125f, 0.0735f, 0.0225f, 1.0f);
+	static_objects[OBJ_TANK].material[1].diffuse = glm::vec4(94 / 255.0f, 218 / 255.0f, 184 / 255.0f, 0.63 / 255.0f);
+	static_objects[OBJ_TANK].material[1].specular = glm::vec4(0.256777f, 0.137622f, 0.086014f, 1.0f);
+	static_objects[OBJ_TANK].material[1].exponent = 128.0f*0.1f;
+
+	// GODZILLA
+	strcpy(static_objects[OBJ_GODZILLA].filename, "Data/Godzilla.geom");
+	static_objects[OBJ_GODZILLA].n_fields = 8;
+
+	static_objects[OBJ_GODZILLA].front_face_mode = GL_CCW;
+	prepare_geom_of_static_object(&(static_objects[OBJ_GODZILLA]));
+
+	static_objects[OBJ_GODZILLA].n_geom_instances = 1;
+
+	static_objects[OBJ_GODZILLA].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(80.0f, 65.0f, 0.0f));
+	static_objects[OBJ_GODZILLA].ModelMatrix[0] = glm::scale(static_objects[OBJ_GODZILLA].ModelMatrix[0], glm::vec3(0.15f, 0.15f, 0.25f));
+	static_objects[OBJ_GODZILLA].ModelMatrix[0] = glm::rotate(static_objects[OBJ_GODZILLA].ModelMatrix[0], 180.0f * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	static_objects[OBJ_GODZILLA].ModelMatrix[0] = glm::rotate(static_objects[OBJ_GODZILLA].ModelMatrix[0], 90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+
+	static_objects[OBJ_GODZILLA].material[0].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_GODZILLA].material[0].ambient = glm::vec4(0.19125f, 0.0735f, 0.0225f, 1.0f);
+	static_objects[OBJ_GODZILLA].material[0].diffuse = glm::vec4(218 / 255.0f, 199 / 255.0f, 94 / 255.0f, 0.72 / 255.0f);
+	static_objects[OBJ_GODZILLA].material[0].specular = glm::vec4(0.256777f, 0.137622f, 0.086014f, 1.0f);
+	static_objects[OBJ_GODZILLA].material[0].exponent = 128.0f*0.1f;
+
+	// BUS
+	strcpy(static_objects[OBJ_BUS].filename, "Data/Bus.geom");
+	static_objects[OBJ_BUS].n_fields = 8;
+
+	static_objects[OBJ_BUS].front_face_mode = GL_CCW;
+	prepare_geom_of_static_object(&(static_objects[OBJ_BUS]));
+
+	static_objects[OBJ_BUS].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(35.0f, 135.0f, 0.0f));
+	static_objects[OBJ_BUS].ModelMatrix[0] = glm::scale(static_objects[OBJ_BUS].ModelMatrix[0], glm::vec3(1.2f, 1.2f, 1.3f));
+	static_objects[OBJ_BUS].ModelMatrix[0] = glm::rotate(static_objects[OBJ_BUS].ModelMatrix[0], 45.0f * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	static_objects[OBJ_BUS].ModelMatrix[0] = glm::rotate(static_objects[OBJ_BUS].ModelMatrix[0], 90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+
+	static_objects[OBJ_BUS].n_geom_instances = 1;
+
+	static_objects[OBJ_BUS].material[0].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_BUS].material[0].ambient = glm::vec4(0.19125f, 0.0735f, 0.0225f, 1.0f);
+	static_objects[OBJ_BUS].material[0].diffuse = glm::vec4(218 / 255.0f, 94 / 255.0f, 94 / 255.0f, 0.72 / 255.0f);
+	static_objects[OBJ_BUS].material[0].specular = glm::vec4(0.256777f, 0.137622f, 0.086014f, 1.0f);
+	static_objects[OBJ_BUS].material[0].exponent = 128.0f*0.1f;
+
+	// BIKE
+	strcpy(static_objects[OBJ_BIKE].filename, "Data/Bike.geom");
+	static_objects[OBJ_BIKE].n_fields = 8;
+
+	static_objects[OBJ_BIKE].front_face_mode = GL_CCW;
+	prepare_geom_of_static_object(&(static_objects[OBJ_BIKE]));
+
+	static_objects[OBJ_BIKE].ModelMatrix[0] = glm::translate(glm::mat4(1.0f), glm::vec3(200.0f, 25.0f, 0.0f));
+	static_objects[OBJ_BIKE].ModelMatrix[0] = glm::scale(static_objects[OBJ_BIKE].ModelMatrix[0], glm::vec3(10.0f, 10.0f, 10.0f));
+	static_objects[OBJ_BIKE].ModelMatrix[0] = glm::rotate(static_objects[OBJ_BIKE].ModelMatrix[0], 90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	static_objects[OBJ_BIKE].ModelMatrix[0] = glm::rotate(static_objects[OBJ_BIKE].ModelMatrix[0], -90.0f * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
+
+	static_objects[OBJ_BIKE].n_geom_instances = 1;
+
+	static_objects[OBJ_BIKE].material[0].emission = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	static_objects[OBJ_BIKE].material[0].ambient = glm::vec4(0.19125f, 0.0735f, 0.0225f, 1.0f);
+	static_objects[OBJ_BIKE].material[0].diffuse = glm::vec4(156 / 255.0f, 218 / 255.0f, 94 / 255.0f, 0.72 / 255.0f);
+	static_objects[OBJ_BIKE].material[0].specular = glm::vec4(0.256777f, 0.137622f, 0.086014f, 1.0f);
+	static_objects[OBJ_BIKE].material[0].exponent = 128.0f*0.1f;
+
+	n_static_objects = 13;
 }
 
 void draw_static_object(Object *obj_ptr, int instance_ID, int camera_ID) {
