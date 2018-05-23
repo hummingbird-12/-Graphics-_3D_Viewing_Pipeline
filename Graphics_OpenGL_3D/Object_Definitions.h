@@ -470,6 +470,62 @@ void draw_camera(int camera_id, int camera_to_draw) {
 	glBindVertexArray(0);
 }
 
+GLuint line_VBO, line_VAO;
+GLfloat line_vertices[][3] = { { 0.0f, 0.0f, 0.0f }, { 230.0f, 0.0f, 0.0f } };
+
+void define_line(void) {
+	// Initialize vertex buffer object.
+	glGenBuffers(1, &line_VBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, line_VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(line_vertices), &line_vertices[0][0], GL_STATIC_DRAW);
+
+	// Initialize vertex array object.
+	glGenVertexArrays(1, &line_VAO);
+	glBindVertexArray(line_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, line_VBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void swap(float* x, float* y) {
+	float t = *x;
+	*x = *y;
+	*y = t;
+}
+
+void draw_line(int camera_id, float x1, float y1, float z1, float x2, float y2, float z2, float r, float g, float b) {
+	float length, zAng, xyAng;
+	
+	if (x2 < x1) {
+		swap(&x1, &x2);
+		swap(&y1, &y2);
+		swap(&z1, &z2);
+	}
+	
+	length = glm::sqrt(glm::pow((x2 - x1), 2) + glm::pow((y2 - y1), 2) + glm::pow((z2 - z1), 2)); // line length
+	zAng = glm::atan(y2 - y1, x2 - x1); // angle to rotate along z-axis
+	xyAng = glm::asin((z2 - z1) / length); // angle to rotate along tangent in xy-plane
+
+	ModelViewMatrix[camera_id] = glm::translate(ViewMatrix[camera_id], glm::vec3(x1, y1, z1));
+	ModelViewMatrix[camera_id] = glm::rotate(ModelViewMatrix[camera_id], xyAng, glm::cross(glm::vec3(x2 - x1, y2 - y1, z2 - z1), glm::vec3(0.0f, 0.0f, 1.0f)));
+	ModelViewMatrix[camera_id] = glm::rotate(ModelViewMatrix[camera_id], zAng, glm::vec3(0.0f, 0.0f, 1.0f));
+	ModelViewMatrix[camera_id] = glm::scale(ModelViewMatrix[camera_id], glm::vec3(length / 230.0f, 1.0f, 1.0f));
+	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+
+	glBindVertexArray(line_VAO);
+	glUniform3f(loc_primitive_color, r / 255.0f, g / 255.0f, b / 255.0f);
+	glLineWidth(2.0);
+	glDrawArrays(GL_LINES, 0, 2);
+	glLineWidth(1.0);
+	glBindVertexArray(0);
+}
+
 void cleanup_OpenGL_stuffs(void) {
 	for (int i = 0; i < n_static_objects; i++) {
 		glDeleteVertexArrays(1, &(static_objects[i].VAO));

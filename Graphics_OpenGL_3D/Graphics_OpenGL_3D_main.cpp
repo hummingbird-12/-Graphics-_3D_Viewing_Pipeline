@@ -91,6 +91,57 @@ void display_camera(int camera_id) {
 		glPointSize(1.0f);
 	}
 
+	if (camera_id != MAIN_CAM) {
+		float cx, cy, cz;
+		float offset;
+		glm::vec3 farTR, farTL, farBL, farBR;
+		glm::vec3 nearTR, nearTL, nearBL, nearBR;
+		CAMERA tempCamera;
+
+		tempCamera = camera[MAIN_CAM];
+
+		cx = tempCamera.pos.x;
+		cy = tempCamera.pos.y;
+		cz = tempCamera.pos.z;
+
+		// far clip coordinates
+		offset = glm::tan(tempCamera.fov_y * TO_RADIAN / 2) * tempCamera.far_clip;
+		farTR = tempCamera.pos +
+			glm::normalize(tempCamera.uaxis) * offset +
+			glm::normalize(tempCamera.vaxis) * offset -
+			glm::normalize(tempCamera.naxis) * tempCamera.far_clip;
+		farTL = farTR - tempCamera.uaxis * (offset * 2);
+		farBR = farTR - tempCamera.vaxis * (offset * 2);
+		farBL = farBR - tempCamera.uaxis * (offset * 2);
+
+		// near clip coordinates
+		offset = glm::tan(tempCamera.fov_y * TO_RADIAN / 2) * tempCamera.near_clip;
+		nearTR = tempCamera.pos +
+			glm::normalize(tempCamera.uaxis) * offset +
+			glm::normalize(tempCamera.vaxis) * offset -
+			glm::normalize(tempCamera.naxis) * tempCamera.near_clip;
+		nearTL = nearTR - tempCamera.uaxis * (offset * 2);
+		nearBR = nearTR - tempCamera.vaxis * (offset * 2);
+		nearBL = nearBR - tempCamera.uaxis * (offset * 2);
+
+		draw_line(camera_id, cx, cy, cz, farTR.x, farTR.y, farTR.z, 255, 255, 255);
+		draw_line(camera_id, cx, cy, cz, farTL.x, farTL.y, farTL.z, 255, 255, 255);
+		draw_line(camera_id, cx, cy, cz, farBR.x, farBR.y, farBR.z, 255, 255, 255);
+		draw_line(camera_id, cx, cy, cz, farBL.x, farBL.y, farBL.z, 255, 255, 255);
+
+		// far clip plane
+		draw_line(camera_id, farTL.x, farTL.y, farTL.z, farTR.x, farTR.y, farTR.z, 180, 0, 210);
+		draw_line(camera_id, farTL.x, farTL.y, farTL.z, farBL.x, farBL.y, farBL.z, 180, 0, 210);
+		draw_line(camera_id, farBR.x, farBR.y, farBR.z, farTR.x, farTR.y, farTR.z, 180, 0, 210);
+		draw_line(camera_id, farBR.x, farBR.y, farBR.z, farBL.x, farBL.y, farBL.z, 180, 0, 210);
+
+		// near clip plane
+		draw_line(camera_id, nearTL.x, nearTL.y, nearTL.z, nearTR.x, nearTR.y, nearTR.z, 180, 0, 210);
+		draw_line(camera_id, nearTL.x, nearTL.y, nearTL.z, nearBL.x, nearBL.y, nearBL.z, 180, 0, 210);
+		draw_line(camera_id, nearBR.x, nearBR.y, nearBR.z, nearTR.x, nearTR.y, nearTR.z, 180, 0, 210);
+		draw_line(camera_id, nearBR.x, nearBR.y, nearBR.z, nearBL.x, nearBL.y, nearBL.z, 180, 0, 210);
+	}
+
 	draw_static_object(&(static_objects[OBJ_BUILDING]), 0, camera_id);
 
 	draw_static_object(&(static_objects[OBJ_TABLE]), 0, camera_id);
@@ -176,7 +227,7 @@ void mouse(int button, int state, int x, int y) {
 		}
 		break;
 	case SCROLL_UP: // mouse wheel scroll up
-		if (camera[target_cam].fov_y - 1.0f > 5.0f) {
+		if (camera[target_cam].fov_y - 1.0f > 3.0f) {
 			camera[target_cam].fov_y -= 1.0f;
 			ProjectionMatrix[target_cam] = glm::perspective(camera[target_cam].fov_y*TO_RADIAN, camera[target_cam].aspect_ratio, camera[target_cam].near_clip, camera[target_cam].far_clip);
 			ViewProjectionMatrix[target_cam] = ProjectionMatrix[target_cam] * ViewMatrix[target_cam];
@@ -493,53 +544,53 @@ void initialize_camera(void) {
 	*/
 
 	// MAIN CAMERA
-	temp = glm::lookAt(glm::vec3(600.0f, 600.0f, 200.0f), glm::vec3(125.0f, 80.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	camera[MAIN_CAM].pos = glm::vec3(600.0f, 600.0f, 200.0f);
+	temp = glm::lookAt(glm::vec3(300.0f, 300.0f, 100.0f), glm::vec3(125.0f, 80.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	camera[MAIN_CAM].pos = glm::vec3(300.0f, 300.0f, 100.0f);
 	camera[MAIN_CAM].uaxis = glm::vec3(temp[0].x, temp[1].x, temp[2].x); // right
 	camera[MAIN_CAM].vaxis = glm::vec3(temp[0].y, temp[1].y, temp[2].y); // up
 	camera[MAIN_CAM].naxis = glm::vec3(temp[0].z, temp[1].z, temp[2].z); // back
 
-	camera[MAIN_CAM].fov_y = 30.0f;
-	camera[MAIN_CAM].near_clip = 1.0f;
-	camera[MAIN_CAM].far_clip = 10000.0f;
+	camera[MAIN_CAM].fov_y = 60.0f;
+	camera[MAIN_CAM].near_clip = 7.0f;
+	camera[MAIN_CAM].far_clip = 500.0f;
 
 	set_ViewMatrix(MAIN_CAM);
 
 	// FRONT CAMERA
-	camera[FRONT_CAM].pos = glm::vec3(120.0f, -50.0f, 25.0f);
+	camera[FRONT_CAM].pos = glm::vec3(120.0f, -1500.0f, 25.0f);
 	camera[FRONT_CAM].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
 	camera[FRONT_CAM].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[FRONT_CAM].naxis = glm::vec3(0.0f, -1.0f, 0.0f);
 
 	camera[FRONT_CAM].fov_y = 15.0f;
 	camera[FRONT_CAM].near_clip = 1.0f;
-	camera[FRONT_CAM].far_clip = 300.0f;
+	camera[FRONT_CAM].far_clip = 3000.0f;
 
 	set_ViewMatrix(FRONT_CAM);
 
 	// SIDE CAMERA
 	//temp = glm::lookAt(glm::vec3(800.0f, 85.0f, 25.0f), glm::vec3(0.0f, 90.0f, 25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	camera[SIDE_CAM].pos = glm::vec3(290.0f, 85.0f, 25.0f);
+	camera[SIDE_CAM].pos = glm::vec3(2900.0f, 85.0f, 25.0f);
 	camera[SIDE_CAM].uaxis = glm::vec3(0.0f, 1.0f, 0.0f);
 	camera[SIDE_CAM].vaxis = glm::vec3(0.0f, 0.0f, 1.0f);
 	camera[SIDE_CAM].naxis = glm::vec3(1.0f, 0.0f, 0.0f);
 
 	camera[SIDE_CAM].fov_y = 25.0f;
 	camera[SIDE_CAM].near_clip = 1.0f;
-	camera[SIDE_CAM].far_clip = 300.0f;
+	camera[SIDE_CAM].far_clip = 3000.0f;
 
 	set_ViewMatrix(SIDE_CAM);
 
 	// TOP CAMERA
 	//temp = glm::lookAt(glm::vec3(120.0f, 90.0f, 1000.0f), glm::vec3(120.0f, 90.0f, 0.0f), glm::vec3(-10.0f, 0.0f, 0.0f));
-	camera[TOP_CAM].pos = glm::vec3(120.0f, 85.0f, 110.0f);
+	camera[TOP_CAM].pos = glm::vec3(120.0f, 85.0f, 1100.0f);
 	camera[TOP_CAM].uaxis = glm::vec3(1.0f, 0.0f, 0.0f);
 	camera[TOP_CAM].vaxis = glm::vec3(0.0f, 1.0f, 0.0f);
 	camera[TOP_CAM].naxis = glm::vec3(0.0f, 0.0f, 1.0f);
 
 	camera[TOP_CAM].fov_y = 15.0f;
 	camera[TOP_CAM].near_clip = 1.0f;
-	camera[TOP_CAM].far_clip = 300.0f;
+	camera[TOP_CAM].far_clip = 3000.0f;
 
 	set_ViewMatrix(TOP_CAM);
 
@@ -612,6 +663,7 @@ void prepare_scene(void) {
 	define_static_objects();
 	define_animated_tiger();
 	define_camera();
+	define_line();
 }
 
 void initialize_renderer(void) {
