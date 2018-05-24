@@ -633,22 +633,8 @@ void draw_car(int camera_id) {
 	glUniform3f(loc_primitive_color, 0.498f, 1.000f, 0.831f); // color name: Aquamarine
 	draw_hier_obj(HIER_OBJ_CAR_BODY); // draw body
 
-	/*
-	glLineWidth(2.0f);
-	draw_axes(camera_id); // draw MC axes of body
-	glLineWidth(1.0f);
-
-	ModelMatrix_CAR_DRIVER = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(-3.0f, 0.5f, 2.5f));
-	ModelMatrix_CAR_DRIVER = glm::rotate(ModelMatrix_CAR_DRIVER, TO_RADIAN*90.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-	ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_DRIVER;
-	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
-	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
-	glLineWidth(5.0f);
-	draw_axes(camera_id); // draw camera frame at driver seat
-	glLineWidth(1.0f);
-	*/
-
 	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(-3.9f, -3.5f, 4.5f));
+	ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_WHEEL, 20.0f * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
 	ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_WHEEL;
 	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
 	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
@@ -661,6 +647,7 @@ void draw_car(int camera_id) {
 	draw_wheel_and_nut(camera_id);  // draw wheel 1
 
 	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(-3.9f, -3.5f, -4.5f));
+	ModelMatrix_CAR_WHEEL = glm::rotate(ModelMatrix_CAR_WHEEL, 20.0f * TO_RADIAN, glm::vec3(0.0f, 1.0f, 0.0f));
 	ModelMatrix_CAR_WHEEL = glm::scale(ModelMatrix_CAR_WHEEL, glm::vec3(1.0f, 1.0f, -1.0f));
 	ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_WHEEL;
 	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];

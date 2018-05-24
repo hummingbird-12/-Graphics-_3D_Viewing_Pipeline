@@ -14,7 +14,8 @@ GLint loc_ModelViewProjectionMatrix, loc_primitive_color; // indices of uniform 
 #include <glm/gtc/matrix_transform.hpp> //translate, rotate, scale, lookAt, perspective, etc.
 
 glm::mat4 ModelMatrix_CAR_BODY, ModelMatrix_CAR_WHEEL, ModelMatrix_CAR_NUT, ModelMatrix_CAR_DRIVER;
-glm::mat4 ModelMatrix_CAR_BODY_to_DRIVER; // computed only once in initialize_camera()
+//glm::mat4 ModelMatrix_CAR_BODY_to_DRIVER; // computed only once in initialize_camera()
+float car_rotation_angle;
 
 #define CAM_TRANSLATION_SPEED 0.025f
 #define CAM_ROTATION_SPEED 0.1f
@@ -198,7 +199,10 @@ void display_camera(int camera_id) {
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	ModelMatrix_CAR_BODY = glm::rotate(glm::mat4(1.0f), 90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
+	ModelMatrix_CAR_BODY = glm::rotate(glm::mat4(1.0f), car_rotation_angle * TO_RADIAN, glm::vec3(0.0f, 0.0f, 1.0f));
+	ModelMatrix_CAR_BODY = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(0.0f, 100.0f, 20.0f));
+	ModelMatrix_CAR_BODY = glm::scale(ModelMatrix_CAR_BODY, glm::vec3(4.0f, 4.0f, 4.0f));
+	ModelMatrix_CAR_BODY = glm::rotate(ModelMatrix_CAR_BODY, 90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
 
 	if (ViewMode == EXTERIOR_MODE) { // MAIN_CAM, SIDE_CAM, FRONT_CAM, TOP_CAM
 		display_camera(MAIN_CAM);
@@ -576,6 +580,7 @@ void timer_scene(int timestamp_scene) {
 	}
 
 	tiger_data.cur_frame = timestamp_scene % N_TIGER_FRAMES;
+	car_rotation_angle = timestamp_scene % 360;
 	glutPostRedisplay();
 	glutTimerFunc(100, timer_scene, (timestamp_scene + 1) % INT_MAX);
 }
@@ -609,6 +614,7 @@ void initialize_camera(void) {
 	glm::mat4 temp;
 
 	ViewMode = EXTERIOR_MODE;
+	car_rotation_angle = 0.0f;
 
 	/*
 	MAIN_CAM 0
