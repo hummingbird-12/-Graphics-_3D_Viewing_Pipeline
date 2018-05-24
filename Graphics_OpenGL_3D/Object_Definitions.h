@@ -27,6 +27,8 @@ typedef struct _Object {
 	Material material[N_MAX_GEOM_COPIES];
 } Object;
 
+
+// STATIC OBJECTS
 #define N_MAX_STATIC_OBJECTS		13
 Object static_objects[N_MAX_STATIC_OBJECTS]; // allocage memory dynamically every time it is needed rather than using a static array
 int n_static_objects = 0;
@@ -476,14 +478,15 @@ void draw_static_object(Object *obj_ptr, int instance_ID, int camera_ID) {
 	glBindVertexArray(0);
 }
 
+// AXES
 GLuint VBO_axes, VAO_axes;
 GLfloat vertices_axes[6][3] = {
 	{ 0.0f, 0.0f, 0.0f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },
-	{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f }
+{ 0.0f, 0.0f, 0.0f },{ 0.0f, 0.0f, 1.0f }
 };
 GLfloat axes_color[3][3] = { { 1.0f, 0.0f, 0.0f },{ 0.0f, 1.0f, 0.0f },{ 0.0f, 0.0f, 1.0f } };
 
-void define_axes(void) {  
+void define_axes(void) {
 	glGenBuffers(1, &VBO_axes);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_axes);
@@ -515,6 +518,166 @@ void draw_axes(int camera_id) {
 	glUniform3fv(loc_primitive_color, 1, axes_color[2]);
 	glDrawArrays(GL_LINES, 4, 2);
 	glBindVertexArray(0);
+}
+
+// HIERARCHICAL MODEL CAR
+#define N_HIERARCHICAL_OBJECTS	3
+
+#define HIER_OBJ_CAR_BODY		0
+#define HIER_OBJ_CAR_WHEEL		1
+#define HIER_OBJ_CAR_NUT		2
+
+GLuint hier_obj_VBO[N_HIERARCHICAL_OBJECTS];
+GLuint hier_obj_VAO[N_HIERARCHICAL_OBJECTS];
+
+int hier_obj_n_triangles[N_HIERARCHICAL_OBJECTS];
+GLfloat *hier_obj_vertices[N_HIERARCHICAL_OBJECTS];
+
+// codes for the 'general' triangular-mesh object
+typedef enum _HIER_OBJ_TYPE { HIER_OBJ_TYPE_V = 0, HIER_OBJ_TYPE_VN, HIER_OBJ_TYPE_VNT } HIER_OBJ_TYPE;
+// HIER_OBJ_TYPE_V: (x, y, z)
+// HIER_OBJ_TYPE_VN: (x, y, z, nx, ny, nz)
+// HIER_OBJ_TYPE_VNT: (x, y, z, nx, ny, nz, s, t)
+int HIER_OBJ_ELEMENTS_PER_VERTEX[3] = { 3, 6, 8 };
+
+int read_geometry_file(GLfloat **object, char *filename, HIER_OBJ_TYPE hier_obj_type) {
+	int i, n_triangles;
+	float *flt_ptr;
+	FILE *fp;
+
+	fprintf(stdout, "Reading geometry from the geometry file %s...\n", filename);
+	fp = fopen(filename, "r");
+	if (fp == NULL) {
+		fprintf(stderr, "Cannot open the geometry file %s ...", filename);
+		return -1;
+	}
+
+	fscanf(fp, "%d", &n_triangles);
+	*object = (float *)malloc(3 * n_triangles*HIER_OBJ_ELEMENTS_PER_VERTEX[hier_obj_type] * sizeof(float));
+	if (*object == NULL) {
+		fprintf(stderr, "Cannot allocate memory for the geometry file %s ...", filename);
+		return -1;
+	}
+
+	flt_ptr = *object;
+	for (i = 0; i < 3 * n_triangles * HIER_OBJ_ELEMENTS_PER_VERTEX[hier_obj_type]; i++)
+		fscanf(fp, "%f", flt_ptr++);
+	fclose(fp);
+
+	fprintf(stdout, "Read %d primitives successfully.\n\n", n_triangles);
+
+	return n_triangles;
+}
+
+void prepare_hier_obj(int hier_obj_ID, char *filename, HIER_OBJ_TYPE hier_obj_type) {
+	int n_bytes_per_vertex;
+
+	n_bytes_per_vertex = HIER_OBJ_ELEMENTS_PER_VERTEX[hier_obj_type] * sizeof(float);
+	hier_obj_n_triangles[hier_obj_ID] = read_geometry_file(&hier_obj_vertices[hier_obj_ID], filename, hier_obj_type);
+
+	// Initialize vertex array object.
+	glGenVertexArrays(1, &hier_obj_VAO[hier_obj_ID]);
+	glBindVertexArray(hier_obj_VAO[hier_obj_ID]);
+	glGenBuffers(1, &hier_obj_VBO[hier_obj_ID]);
+	glBindBuffer(GL_ARRAY_BUFFER, hier_obj_VBO[hier_obj_ID]);
+	glBufferData(GL_ARRAY_BUFFER, 3 * hier_obj_n_triangles[hier_obj_ID] * n_bytes_per_vertex,
+		hier_obj_vertices[hier_obj_ID], GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(0);
+	if (hier_obj_type >= HIER_OBJ_TYPE_VN) {
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+	}
+	if (hier_obj_type >= HIER_OBJ_TYPE_VNT) {
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, n_bytes_per_vertex, BUFFER_OFFSET(6 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	free(hier_obj_vertices[hier_obj_ID]);
+}
+
+void draw_hier_obj(int hier_obj_ID) {
+	glBindVertexArray(hier_obj_VAO[hier_obj_ID]);
+	glDrawArrays(GL_TRIANGLES, 0, 3 * hier_obj_n_triangles[hier_obj_ID]);
+	glBindVertexArray(0);
+}
+
+#define rad 1.7f
+#define ww 1.0f
+void draw_wheel_and_nut(int camera_id) {
+	// angle is used in Hierarchical_Car_Correct later
+	int i;
+
+	glUniform3f(loc_primitive_color, 0.000f, 0.808f, 0.820f); // color name: DarkTurquoise
+	draw_hier_obj(HIER_OBJ_CAR_WHEEL); // draw wheel
+
+	for (i = 0; i < 5; i++) {
+		ModelMatrix_CAR_NUT = glm::rotate(ModelMatrix_CAR_WHEEL, TO_RADIAN*72.0f*i, glm::vec3(0.0f, 0.0f, 1.0f));
+		ModelMatrix_CAR_NUT = glm::translate(ModelMatrix_CAR_NUT, glm::vec3(rad - 0.5f, 0.0f, ww));
+		ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_NUT;
+		ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
+		glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+
+		glUniform3f(loc_primitive_color, 0.690f, 0.769f, 0.871f); // color name: LightSteelBlue
+		draw_hier_obj(HIER_OBJ_CAR_NUT); // draw i-th nut
+	}
+}
+
+void draw_car(int camera_id) {
+	ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_BODY;
+	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+
+	glUniform3f(loc_primitive_color, 0.498f, 1.000f, 0.831f); // color name: Aquamarine
+	draw_hier_obj(HIER_OBJ_CAR_BODY); // draw body
+
+	/*
+	glLineWidth(2.0f);
+	draw_axes(camera_id); // draw MC axes of body
+	glLineWidth(1.0f);
+
+	ModelMatrix_CAR_DRIVER = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(-3.0f, 0.5f, 2.5f));
+	ModelMatrix_CAR_DRIVER = glm::rotate(ModelMatrix_CAR_DRIVER, TO_RADIAN*90.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+	ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_DRIVER;
+	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	glLineWidth(5.0f);
+	draw_axes(camera_id); // draw camera frame at driver seat
+	glLineWidth(1.0f);
+	*/
+
+	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(-3.9f, -3.5f, 4.5f));
+	ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_WHEEL;
+	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	draw_wheel_and_nut(camera_id);  // draw wheel 0
+
+	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(3.9f, -3.5f, 4.5f));
+	ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_WHEEL;
+	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	draw_wheel_and_nut(camera_id);  // draw wheel 1
+
+	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(-3.9f, -3.5f, -4.5f));
+	ModelMatrix_CAR_WHEEL = glm::scale(ModelMatrix_CAR_WHEEL, glm::vec3(1.0f, 1.0f, -1.0f));
+	ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_WHEEL;
+	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	draw_wheel_and_nut(camera_id);  // draw wheel 2
+
+	ModelMatrix_CAR_WHEEL = glm::translate(ModelMatrix_CAR_BODY, glm::vec3(3.9f, -3.5f, -4.5f));
+	ModelMatrix_CAR_WHEEL = glm::scale(ModelMatrix_CAR_WHEEL, glm::vec3(1.0f, 1.0f, -1.0f));
+	ModelViewMatrix[camera_id] = ViewMatrix[camera_id] * ModelMatrix_CAR_WHEEL;
+	ModelViewProjectionMatrix = ProjectionMatrix[camera_id] * ModelViewMatrix[camera_id];
+	glUniformMatrix4fv(loc_ModelViewProjectionMatrix, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
+	draw_wheel_and_nut(camera_id);  // draw wheel 3
+}
+
+void free_hier_obj(int hier_obj_ID) {
+	glDeleteVertexArrays(1, &hier_obj_VAO[hier_obj_ID]);
+	glDeleteBuffers(1, &hier_obj_VBO[hier_obj_ID]);
 }
 
 #define N_TIGER_FRAMES 12
@@ -784,6 +947,9 @@ void cleanup_OpenGL_stuffs(void) {
 		glDeleteVertexArrays(1, &(tiger[i].VAO));
 		glDeleteBuffers(1, &(tiger[i].VBO));
 	}
+
+	for (int i = 0; i < N_HIERARCHICAL_OBJECTS; i++)
+		free_hier_obj(i);
 
 	glDeleteVertexArrays(1, &VAO_axes);
 	glDeleteBuffers(1, &VBO_axes);

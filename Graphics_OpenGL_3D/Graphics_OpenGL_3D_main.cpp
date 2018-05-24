@@ -13,6 +13,9 @@ GLint loc_ModelViewProjectionMatrix, loc_primitive_color; // indices of uniform 
 //#include <glm/glm.hpp> 
 #include <glm/gtc/matrix_transform.hpp> //translate, rotate, scale, lookAt, perspective, etc.
 
+glm::mat4 ModelMatrix_CAR_BODY, ModelMatrix_CAR_WHEEL, ModelMatrix_CAR_NUT, ModelMatrix_CAR_DRIVER;
+glm::mat4 ModelMatrix_CAR_BODY_to_DRIVER; // computed only once in initialize_camera()
+
 #define CAM_TRANSLATION_SPEED 0.025f
 #define CAM_ROTATION_SPEED 0.1f
 
@@ -95,6 +98,8 @@ void set_ViewMatrix(int camera_id) {
 
 void display_camera(int camera_id) {
 	glViewport(viewport[camera_id].x, viewport[camera_id].y, viewport[camera_id].w, viewport[camera_id].h);
+
+	draw_car(camera_id);
 
 	glLineWidth(2.0f);
 	draw_axes(camera_id);
@@ -192,6 +197,8 @@ void display_camera(int camera_id) {
 
 void display(void) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	ModelMatrix_CAR_BODY = glm::rotate(glm::mat4(1.0f), 90.0f * TO_RADIAN, glm::vec3(1.0f, 0.0f, 0.0f));
 
 	if (ViewMode == EXTERIOR_MODE) { // MAIN_CAM, SIDE_CAM, FRONT_CAM, TOP_CAM
 		display_camera(MAIN_CAM);
@@ -730,11 +737,18 @@ void initialize_OpenGL(void) {
 }
 
 void prepare_scene(void) {
+	char car_body[] = "Data/car_body_triangles_v.txt";
+	char car_wheel[] = "Data/car_wheel_triangles_v.txt";
+	char car_nut[] = "Data/car_nut_triangles_v.txt";
+
 	define_axes();
 	define_static_objects();
 	define_animated_tiger();
 	define_camera();
 	define_line();
+	prepare_hier_obj(HIER_OBJ_CAR_BODY, car_body, HIER_OBJ_TYPE_V);
+	prepare_hier_obj(HIER_OBJ_CAR_WHEEL, car_wheel, HIER_OBJ_TYPE_V);
+	prepare_hier_obj(HIER_OBJ_CAR_NUT, car_nut, HIER_OBJ_TYPE_V);
 }
 
 void initialize_renderer(void) {
